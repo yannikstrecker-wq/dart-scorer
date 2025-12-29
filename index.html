@@ -13,6 +13,7 @@
   --gold:#d4af37;
   --bg:#050806;
   --text:#f5f5f5;
+  --muted:#9aa4a1;
 }
 *{box-sizing:border-box}
 body{
@@ -42,18 +43,6 @@ body{
   padding:12px;
   border-radius:14px;
   margin-bottom:12px;
-}
-
-/* SETUP */
-.setup input{
-  width:100%;
-  padding:10px;
-  margin-bottom:6px;
-  font-size:16px;
-  font-weight:700;
-  border-radius:8px;
-  border:none;
-  text-align:center;
 }
 
 /* TABLE */
@@ -94,6 +83,14 @@ tr.out{color:#666}
 .playerBox.active{border-color:var(--gold)}
 .score{font-size:42px;font-weight:900}
 
+/* THROWS */
+.throws{
+  text-align:center;
+  margin-top:6px;
+  font-weight:800;
+  color:#9cffc8;
+}
+
 /* INPUT */
 .modes{
   display:grid;
@@ -125,8 +122,6 @@ tr.out{color:#666}
   border:2px solid #0f5d35;
   border-radius:10px;
 }
-.double{color:#003300}
-.triple{color:#fff}
 .bull{color:#ffd700}
 .num:disabled{opacity:.3}
 
@@ -230,6 +225,7 @@ tr.out{color:#666}
       Legs: <span id="legs1">0</span>
     </div>
   </div>
+  <div class="throws" id="throws">Aufnahme: –</div>
 </div>
 
 <div class="panel">
@@ -251,6 +247,13 @@ tr.out{color:#666}
 
 <button class="statBtn" onclick="openStats()">📊</button>
 
+<div class="overlay" id="winnerOverlay">
+  <div class="box">
+    <h2 id="winnerText"></h2>
+    <button class="btn green" onclick="continueAfterWin()">Weiter</button>
+  </div>
+</div>
+
 <div class="overlay" id="statsOverlay">
   <div class="box">
     <h2>Spieler-Statistik</h2>
@@ -261,15 +264,14 @@ tr.out{color:#666}
 
 <script>
 /* ===== GLOBAL ===== */
-let players=[];
-const stats=[];
-let groups, matches, koMatches=[], stage="groups", matchIndex=0;
+let players=[],stats=[],groups,matches,koMatches=[];
+let stage="groups",matchIndex=0;
 let scores=[501,501],legs=[0,0],current=0,throws=0,history=[],mode=1;
 
 /* ===== START ===== */
 function startTournament(){
   players=[p0,p1,p2,p3,p4,p5].map((i,n)=>i.value||`Spieler ${n+1}`);
-  players.forEach(()=>stats.push({matches:0,wins:0,legs:0,darts:0,points:0}));
+  stats=players.map(()=>({matches:0,wins:0,legs:0,darts:0,points:0}));
 
   groups=[
     {name:"Gruppe A",idx:[0,1,2],wins:[0,0,0],legs:[0,0,0]},
@@ -311,6 +313,7 @@ function getMatch(){return stage==="groups"?matches[matchIndex]:koMatches[matchI
 
 function loadMatch(){
   scores=[501,501];legs=[0,0];current=0;throws=0;history=[];
+  updateThrowsUI();
   const m=getMatch();
   name0.textContent=players[m.a];
   name1.textContent=players[m.b];
@@ -322,38 +325,53 @@ function throwDart(v){
   if(throws>=3)return;
   let val=v<=20?v*mode:v;
   scores[current]-=val;
-  history.push(val);
+  history.push({val,label:(mode===2?"D":mode===3?"T":"")+v});
   const p=getMatch()[current===0?"a":"b"];
   stats[p].darts++;stats[p].points+=val;
-  throws++;setMode(1);updateUI();
+  throws++;setMode(1);
+  updateUI();updateThrowsUI();
 }
 
 function undo(){
   if(!history.length)return;
-  const v=history.pop();
-  scores[current]+=v;throws--;updateUI();
+  const last=history.pop();
+  scores[current]+=last.val;
+  throws--;
+  updateUI();updateThrowsUI();
 }
 
 function nextTurn(){
-  if(scores[current]===0 && history.at(-1)%2===0){
+  if(scores[current]===0 && history.at(-1)?.val%2===0){
     legs[current]++;stats[getMatch()[current===0?"a":"b"]].legs++;
     if(legs[current]===2){endMatch();return;}
     scores=[501,501];
   }else if(scores[current]<0||scores[current]===1){
     scores[current]=501;
   }
-  throws=0;history=[];current=1-current;updateUI();
+  throws=0;history=[];current=1-current;
+  updateUI();updateThrowsUI();
 }
 
 function endMatch(){
   const m=getMatch();
+  const winnerIdx=current===0?m.a:m.b;
   stats[m.a].matches++;stats[m.b].matches++;
-  stats[current===0?m.a:m.b].wins++;
+  stats[winnerIdx].wins++;
+
   if(stage==="groups"){
     const g=groups[m.g];
-    const idx=g.idx.indexOf(current===0?m.a:m.b);
+    const idx=g.idx.indexOf(winnerIdx);
     g.wins[idx]++;g.legs[idx]+=legs[current];
   }
+
+  winnerText.textContent=`🏆 ${players[winnerIdx]} gewinnt (${legs[0]}:${legs[1]} Legs)`;
+  renderTables();
+  renderKO();
+  winnerOverlay.classList.add("show");
+}
+
+function continueAfterWin(){
+  winnerOverlay.classList.remove("show");
   matchIndex++;
   if(stage==="groups" && matchIndex===matches.length)buildKO();
   loadMatch();
@@ -367,7 +385,6 @@ function buildKO(){
     {a:groups[1].idx[groups[1].rank[0]],b:groups[0].idx[groups[0].rank[1]]}
   ];
   stage="ko";matchIndex=0;
-  renderTables();renderKO();
 }
 
 /* ===== UI ===== */
@@ -377,16 +394,17 @@ function renderTables(){
     let order=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]);
     let html=`<h4>${g.name}</h4><table><tr><th>Spieler</th><th>Siege</th><th>Legs</th></tr>`;
     order.forEach((i,idx)=>{
-      html+=`<tr class="${idx<2?'qualify':'out'}"><td>${players[g.idx[i]]}</td><td>${g.wins[i]}</td><td>${g.legs[i]}</td></tr>`;
+      html+=`<tr class="${idx<2?'qualify':'out'}">
+        <td>${players[g.idx[i]]}</td><td>${g.wins[i]}</td><td>${g.legs[i]}</td></tr>`;
     });
     html+="</table>";groupTables.innerHTML+=html;
   });
 }
 function renderKO(){
   koTree.innerHTML=koMatches.length?`
-    <div class="round active">HF 1<br>${players[koMatches[0].a]} vs ${players[koMatches[0].b]}</div>
+    <div class="round">HF 1<br>${players[koMatches[0].a]} vs ${players[koMatches[0].b]}</div>
     <div class="round">Finale<br><span class="winner">–</span></div>
-    <div class="round active">HF 2<br>${players[koMatches[1].a]} vs ${players[koMatches[1].b]}</div>`
+    <div class="round">HF 2<br>${players[koMatches[1].a]} vs ${players[koMatches[1].b]}</div>`
   :"<em>KO-Phase noch nicht gestartet</em>";
 }
 function updateUI(){
@@ -396,6 +414,11 @@ function updateUI(){
   legs1.textContent=legs[1];
   box0.classList.toggle("active",current===0);
   box1.classList.toggle("active",current===1);
+}
+function updateThrowsUI(){
+  throwsEl=document.getElementById("throws");
+  if(!history.length){throwsEl.textContent="Aufnahme: –";return;}
+  throwsEl.textContent="Aufnahme: "+history.map(h=>h.label).join(" | ");
 }
 function setMode(m){
   mode=m;
