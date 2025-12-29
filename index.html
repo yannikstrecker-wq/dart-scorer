@@ -4,16 +4,15 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<title>Dart Turnier 6 Spieler</title>
+<title>Dart Turnier</title>
 
 <style>
 :root{
-  --bg:#050806;
   --green:#1e7f4f;
   --red:#b8322a;
   --gold:#d4af37;
+  --bg:#050806;
   --text:#f5f5f5;
-  --muted:#9aa4a1;
 }
 *{box-sizing:border-box}
 body{
@@ -35,8 +34,9 @@ body{
   margin-bottom:12px;
 }
 .header h1{margin:0;color:var(--gold)}
-.header p{margin:4px 0 0;font-size:13px;color:var(--muted)}
+.header p{margin:4px 0 0;font-size:13px;color:#aaa}
 
+/* PANELS */
 .panel{
   background:#111;
   padding:12px;
@@ -44,14 +44,14 @@ body{
   margin-bottom:12px;
 }
 
-/* GROUP TABLE */
+/* TABLE */
 table{width:100%;border-collapse:collapse;font-size:14px}
 th,td{border-bottom:1px solid #333;padding:6px;text-align:center}
 th{color:var(--gold)}
 tr.qualify{color:#9cffc8}
 tr.out{color:#666}
 
-/* KO TREE */
+/* KO */
 .ko{
   display:grid;
   grid-template-columns:1fr 1fr 1fr;
@@ -65,10 +65,9 @@ tr.out{color:#666}
   padding:8px;
 }
 .round.active{border-color:var(--gold)}
-.round .winner{color:var(--gold);font-weight:900}
+.winner{color:var(--gold);font-weight:900}
 
 /* MATCH */
-.match h2{text-align:center;margin:0 0 8px 0}
 .scores{
   display:grid;
   grid-template-columns:1fr 1fr;
@@ -110,9 +109,13 @@ tr.out{color:#666}
   font-size:18px;
   font-weight:900;
   background:#000;
+  color:#eaeaea;
   border:2px solid #0f5d35;
   border-radius:10px;
 }
+.double{color:#003300}
+.triple{color:#fff}
+.bull{color:#ffd700}
 .num:disabled{opacity:.3}
 
 /* ACTIONS */
@@ -132,7 +135,7 @@ tr.out{color:#666}
 .green{background:var(--green);color:#000}
 .red{background:var(--red);color:#fff}
 
-/* STAT BUTTON */
+/* STATS */
 .statBtn{
   position:fixed;
   right:14px;
@@ -173,7 +176,7 @@ tr.out{color:#666}
 
 <div class="header">
   <h1>🎯 Dart Turnier</h1>
-  <p>6 Spieler · Gruppenphase → KO · Best of 3 · Double Out</p>
+  <p>6 Spieler · Gruppen → KO · Best of 3 · Double Out</p>
 </div>
 
 <div class="panel">
@@ -186,16 +189,22 @@ tr.out{color:#666}
   <div class="ko" id="koTree"></div>
 </div>
 
-<div class="panel match">
+<div class="panel">
   <h2 id="matchTitle"></h2>
   <div class="scores">
     <div class="playerBox active" id="box0">
-      <div id="name0"></div>
+      <div>
+        <span id="name0"></span>
+        <button onclick="editName(0)">✏️</button>
+      </div>
       <div class="score" id="score0">501</div>
       Legs: <span id="legs0">0</span>
     </div>
     <div class="playerBox" id="box1">
-      <div id="name1"></div>
+      <div>
+        <span id="name1"></span>
+        <button onclick="editName(1)">✏️</button>
+      </div>
       <div class="score" id="score1">501</div>
       Legs: <span id="legs1">0</span>
     </div>
@@ -224,65 +233,127 @@ tr.out{color:#666}
 <div class="overlay" id="statsOverlay">
   <div class="box">
     <h2>Spieler-Statistik</h2>
-    <div id="statsContent"></div>
-    <br>
+    <div id="statsContent"></div><br>
     <button class="btn green" onclick="closeStats()">Schließen</button>
   </div>
 </div>
 
 <script>
-/* ================= PLAYERS ================= */
-const players=["A1","A2","A3","B1","B2","B3"];
-const stats=players.map(()=>({
-  matches:0,wins:0,legs:0,darts:0,points:0
-}));
+/* ===== SPIELER ===== */
+let players=["A1","A2","A3","B1","B2","B3"];
+const stats=players.map(()=>({matches:0,wins:0,legs:0,darts:0,points:0}));
 
-/* ================= GROUPS ================= */
+/* ===== GRUPPEN ===== */
 const groups=[
   {name:"Gruppe A",idx:[0,1,2],wins:[0,0,0],legs:[0,0,0]},
   {name:"Gruppe B",idx:[3,4,5],wins:[0,0,0],legs:[0,0,0]}
 ];
 
-/* ================= MATCHES ================= */
+/* ===== MATCHES ===== */
 let stage="groups";
 let matches=[
-  {stage:"groups",a:0,b:1,g:0},
-  {stage:"groups",a:0,b:2,g:0},
-  {stage:"groups",a:1,b:2,g:0},
-  {stage:"groups",a:3,b:4,g:1},
-  {stage:"groups",a:3,b:5,g:1},
-  {stage:"groups",a:4,b:5,g:1}
+  {a:0,b:1,g:0},{a:0,b:2,g:0},{a:1,b:2,g:0},
+  {a:3,b:4,g:1},{a:3,b:5,g:1},{a:4,b:5,g:1}
 ];
 let koMatches=[];
 let matchIndex=0;
 
-/* ================= GAME STATE ================= */
+/* ===== GAME STATE ===== */
 let scores=[501,501],legs=[0,0],current=0,throws=0;
 let history=[],mode=1;
 
-/* ================= INIT INPUT ================= */
+/* ===== INPUT ===== */
 const nums=document.getElementById("numbers");
 for(let i=1;i<=20;i++)addNum(i);
-addNum(25,"Bull");addNum(50,"DBull");addNum(0,"0");
+addNum(25,"Bull","bull");
+addNum(50,"DBull","bull");
+addNum(0,"0");
 
-function addNum(v,label){
+function addNum(v,label,cls){
   const b=document.createElement("button");
-  b.className="num";
+  b.className="num "+(cls||"");
   b.textContent=label||v;
   b.addEventListener("pointerdown",()=>throwDart(v));
   nums.appendChild(b);
 }
 
-/* ================= UI ================= */
+/* ===== LOGIK ===== */
+function loadMatch(){
+  scores=[501,501];legs=[0,0];current=0;throws=0;history=[];
+  const m=getMatch();
+  name0.textContent=players[m.a];
+  name1.textContent=players[m.b];
+  matchTitle.textContent=`${players[m.a]} vs ${players[m.b]}`;
+  updateUI();
+}
+
+function getMatch(){
+  return stage==="groups"?matches[matchIndex]:koMatches[matchIndex];
+}
+
+function throwDart(v){
+  if(throws>=3)return;
+  let val=v<=20?v*mode:v;
+  scores[current]-=val;
+  history.push(val);
+  const p=getMatch()[current===0?"a":"b"];
+  stats[p].darts++; stats[p].points+=val;
+  throws++; setMode(1); updateUI();
+}
+
+function undo(){
+  if(!history.length)return;
+  const v=history.pop();
+  scores[current]+=v; throws--; updateUI();
+}
+
+function nextTurn(){
+  if(scores[current]===0 && history.at(-1)%2===0){
+    legs[current]++; stats[getMatch()[current===0?"a":"b"]].legs++;
+    if(legs[current]===2){ endMatch(); return; }
+    scores=[501,501];
+  }else if(scores[current]<0||scores[current]===1){
+    scores[current]=501;
+  }
+  throws=0; history=[]; current=1-current; updateUI();
+}
+
+function endMatch(){
+  const m=getMatch();
+  stats[m.a].matches++; stats[m.b].matches++;
+  stats[current===0?m.a:m.b].wins++;
+
+  if(stage==="groups"){
+    const g=groups[m.g];
+    const idx=g.idx.indexOf(current===0?m.a:m.b);
+    g.wins[idx]++; g.legs[idx]+=legs[current];
+  }
+
+  matchIndex++;
+  if(stage==="groups" && matchIndex===matches.length)buildKO();
+  loadMatch();
+}
+
+function buildKO(){
+  groups.forEach(g=>{
+    g.rank=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]);
+  });
+  koMatches=[
+    {a:groups[0].idx[groups[0].rank[0]],b:groups[1].idx[groups[1].rank[1]]},
+    {a:groups[1].idx[groups[1].rank[0]],b:groups[0].idx[groups[0].rank[1]]}
+  ];
+  stage="ko"; matchIndex=0;
+  renderKO(); renderTables();
+}
+
+/* ===== UI ===== */
 function renderTables(){
   groupTables.innerHTML="";
   groups.forEach(g=>{
     let order=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]);
     let html=`<h4>${g.name}</h4><table><tr><th>Spieler</th><th>Siege</th><th>Legs</th></tr>`;
     order.forEach((i,idx)=>{
-      const p=g.idx[i];
-      html+=`<tr class="${idx<2?'qualify':'out'}">
-        <td>${players[p]}</td><td>${g.wins[i]}</td><td>${g.legs[i]}</td></tr>`;
+      html+=`<tr class="${idx<2?'qualify':'out'}"><td>${players[g.idx[i]]}</td><td>${g.wins[i]}</td><td>${g.legs[i]}</td></tr>`;
     });
     html+="</table>";
     groupTables.innerHTML+=html;
@@ -291,15 +362,9 @@ function renderTables(){
 
 function renderKO(){
   koTree.innerHTML=`
-    <div class="round ${stage==='semi'?'active':''}">
-      <strong>Halbfinale 1</strong><br>${koMatches[0]||"–"}
-    </div>
-    <div class="round ${stage==='final'?'active':''}">
-      <strong>Finale</strong><br><span class="winner">${koMatches[2]||"–"}</span>
-    </div>
-    <div class="round ${stage==='semi'?'active':''}">
-      <strong>Halbfinale 2</strong><br>${koMatches[1]||"–"}
-    </div>`;
+    <div class="round active">HF 1<br>${players[koMatches[0].a]} vs ${players[koMatches[0].b]}</div>
+    <div class="round">Finale<br><span class="winner">–</span></div>
+    <div class="round active">HF 2<br>${players[koMatches[1].a]} vs ${players[koMatches[1].b]}</div>`;
 }
 
 function updateUI(){
@@ -311,85 +376,13 @@ function updateUI(){
   box1.classList.toggle("active",current===1);
 }
 
-/* ================= GAME ================= */
-function loadMatch(){
-  scores=[501,501];legs=[0,0];current=0;throws=0;history=[];
-  const m=stage==="groups"?matches[matchIndex]:koMatches[matchIndex];
-  name0.textContent=players[m.a];
-  name1.textContent=players[m.b];
-  matchTitle.textContent=`${players[m.a]} vs ${players[m.b]}`;
-  updateUI();
-}
-
-function throwDart(v){
-  if(throws>=3)return;
-  let val=v<=20?v*mode:v;
-  scores[current]-=val;
-  history.push(val);
-  stats[[players.indexOf(name0.textContent),players.indexOf(name1.textContent)][current]].darts++;
-  stats[[players.indexOf(name0.textContent),players.indexOf(name1.textContent)][current]].points+=val;
-  throws++; setMode(1); updateUI();
-}
-
-function undo(){
-  if(!history.length)return;
-  const v=history.pop();
-  scores[current]+=v;
-  throws--; updateUI();
-}
-
-function nextTurn(){
-  if(scores[current]===0 && history.at(-1)%2===0){
-    legs[current]++; stats[[players.indexOf(name0.textContent),players.indexOf(name1.textContent)][current]].legs++;
-    if(legs[current]===2){ endMatch(); return; }
-    scores=[501,501];
-  }else if(scores[current]<0||scores[current]===1){
-    scores[current]=501;
-  }
-  throws=0;history=[];current=1-current; updateUI();
-}
-
-function endMatch(){
-  const winner=current;
-  const m=stage==="groups"?matches[matchIndex]:koMatches[matchIndex];
-  stats[m.a].matches++; stats[m.b].matches++;
-  stats[winner===0?m.a:m.b].wins++;
-
-  if(stage==="groups"){
-    const g=groups[m.g];
-    const idx=g.idx.indexOf(winner===0?m.a:m.b);
-    g.wins[idx]++; g.legs[idx]+=legs[winner];
-  }
-
-  matchIndex++;
-  if(stage==="groups" && matchIndex===matches.length){
-    buildKO();
-  }else if(stage!=="groups" && matchIndex===koMatches.length){
-    stage="done";
-  }
-  loadMatch();
-}
-
-function buildKO(){
-  groups.forEach(g=>{
-    g.rank=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]);
-  });
-  koMatches=[
-    {stage:"semi",a:groups[0].idx[groups[0].rank[0]],b:groups[1].idx[groups[1].rank[1]]},
-    {stage:"semi",a:groups[1].idx[groups[1].rank[0]],b:groups[0].idx[groups[0].rank[1]]}
-  ];
-  stage="semi"; matchIndex=0;
-  renderTables(); renderKO(); loadMatch();
-}
-
-/* ================= MODES ================= */
 function setMode(m){
   mode=m;
   document.querySelectorAll(".mode").forEach(b=>b.classList.remove("active"));
-  document.querySelector(`.mode.${m===1?'single':m===2?'double':'triple'}`).classList.add("active");
+  document.querySelector(`.mode.${m===1?"single":m===2?"double":"triple"}`).classList.add("active");
 }
 
-/* ================= STATS ================= */
+/* ===== STATS ===== */
 function openStats(){
   let html="<table><tr><th>Spieler</th><th>Matches</th><th>Siege</th><th>Legs</th><th>Darts</th><th>Ø</th></tr>";
   stats.forEach((s,i)=>{
@@ -402,7 +395,17 @@ function openStats(){
 }
 function closeStats(){statsOverlay.classList.remove("show");}
 
-/* ================= START ================= */
+/* ===== NAME EDIT ===== */
+function editName(local){
+  const m=getMatch();
+  const idx=local===0?m.a:m.b;
+  const n=prompt("Neuer Name:",players[idx]);
+  if(!n)return;
+  players[idx]=n;
+  loadMatch(); renderTables(); renderKO();
+}
+
+/* START */
 renderTables(); renderKO(); loadMatch();
 </script>
 </body>
