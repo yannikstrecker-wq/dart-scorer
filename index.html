@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dart Turnier</title>
+<title>Dart Turnier – Komplett</title>
 
 <style>
 :root{
@@ -139,6 +139,8 @@ th{color:var(--gold)}
 <div class="overlay" id="matchOverlay">
   <div class="box">
     <h2 id="matchWinner"></h2>
+    <p id="nextMatchInfo"></p>
+    <p><b>🎄 Steve, du hast einen schönen Christbaum</b></p>
     <button class="btn green" onclick="closeMatchOverlay()">Weiter</button>
   </div>
 </div>
@@ -161,17 +163,33 @@ th{color:var(--gold)}
 
 <script>
 /* ================= VARIABLEN ================= */
-let players=[],stats=[],groups=[],matches=[],koMatches=[],koResults=[];
+let players=[],stats=[],groups=[],matches=[],koMatches=[],koResults=[],results={};
 let stage="groups",matchIndex=0,current=0,mode=1;
 let score=[501,501],legs=[0,0],darts=[];
 
-/* ================= CHECKOUTS ================= */
+/* ================= CHECKOUTS 90–2 ================= */
 const checkoutMap={
-170:"T20 T20 Bull",167:"T20 T19 Bull",164:"T20 T18 Bull",161:"T20 T17 Bull",
-160:"T20 T20 D20",158:"T20 T20 D19",156:"T20 T20 D18",154:"T20 T18 D20",
-152:"T20 T20 D16",150:"T20 T18 D18",148:"T20 T20 D14",146:"T20 T18 D16",
-144:"T20 T20 D12",142:"T20 T14 D20",140:"T20 T20 D10",
-100:"T20 D20",50:"Bull",40:"D20",32:"D16",24:"D12",16:"D8",8:"D4",4:"D2",2:"D1"
+90:"T20 D15",89:"T19 D16",88:"T20 D14",87:"T17 D18",
+86:"T18 D16",85:"T15 D20",84:"T20 D12",83:"T17 D16",
+82:"Bull D16",81:"T19 D12",80:"T20 D10",
+79:"T19 D11",78:"T18 D12",77:"T19 D10",
+76:"T20 D8",75:"T17 D12",74:"T14 D16",
+73:"T19 D8",72:"T16 D12",71:"T13 D16",
+70:"T18 D8",69:"T19 D6",68:"T20 D4",
+67:"T17 D8",66:"T10 D18",65:"25 D20",
+64:"T16 D8",63:"T13 D12",62:"T10 D16",
+61:"T15 D8",60:"20 D20",
+59:"19 D20",58:"18 D20",57:"17 D20",
+56:"16 D20",55:"15 D20",54:"14 D20",
+53:"13 D20",52:"12 D20",51:"11 D20",
+50:"Bull",49:"9 D20",48:"16 D16",
+47:"7 D20",46:"6 D20",45:"5 D20",
+44:"4 D20",43:"3 D20",42:"2 D20",
+41:"1 D20",40:"D20",38:"D19",36:"D18",
+34:"D17",32:"D16",30:"D15",28:"D14",
+26:"D13",24:"D12",22:"D11",20:"D10",
+18:"D9",16:"D8",14:"D7",12:"D6",
+10:"D5",8:"D4",6:"D3",4:"D2",2:"D1"
 };
 
 /* ================= START ================= */
@@ -181,8 +199,8 @@ function start(){
   stats=players.map(()=>({darts:0,points:0,matches:0}));
 
   groups=[
-    {idx:[0,1,2],wins:[0,0,0],legs:[0,0,0]},
-    {idx:[3,4,5],wins:[0,0,0],legs:[0,0,0]}
+    {idx:[0,1,2],wins:[0,0,0],legsFor:[0,0,0],legsAgainst:[0,0,0]},
+    {idx:[3,4,5],wins:[0,0,0],legsFor:[0,0,0],legsAgainst:[0,0,0]}
   ];
 
   matches=[
@@ -194,6 +212,25 @@ function start(){
   setup.style.display="none";
   game.style.display="block";
   buildNums(); renderTables(); loadMatch();
+}
+
+/* ================= FAIR RANKING ================= */
+function rankGroup(g){
+  return [...g.idx].sort((a,b)=>{
+    const ia=g.idx.indexOf(a), ib=g.idx.indexOf(b);
+    if(g.wins[ia]!==g.wins[ib]) return g.wins[ib]-g.wins[ia];
+
+    const key1=`${a}-${b}`, key2=`${b}-${a}`;
+    if(results[key1]===a||results[key2]===a) return -1;
+    if(results[key1]===b||results[key2]===b) return 1;
+
+    const diffA=g.legsFor[ia]-g.legsAgainst[ia];
+    const diffB=g.legsFor[ib]-g.legsAgainst[ib];
+    if(diffA!==diffB) return diffB-diffA;
+
+    if(g.legsFor[ia]!==g.legsFor[ib]) return g.legsFor[ib]-g.legsFor[ia];
+    return Math.random()>0.5?-1:1;
+  });
 }
 
 /* ================= NUMPAD ================= */
@@ -254,27 +291,44 @@ function finishMatch(w){
   const m=stage==="groups"?matches[matchIndex]:koMatches[matchIndex];
   const winner=w===0?m.a:m.b;
   const loser=w===0?m.b:m.a;
+
   stats[winner].matches++;
+  results[`${winner}-${loser}`]=winner;
 
   if(stage==="groups"){
     const g=groups[m.g];
     g.wins[g.idx.indexOf(winner)]++;
-    g.legs[g.idx.indexOf(winner)]+=legs[w];
-    g.legs[g.idx.indexOf(loser)]+=legs[1-w];
+    g.legsFor[g.idx.indexOf(winner)]+=legs[w];
+    g.legsAgainst[g.idx.indexOf(winner)]+=legs[1-w];
+    g.legsFor[g.idx.indexOf(loser)]+=legs[1-w];
+    g.legsAgainst[g.idx.indexOf(loser)]+=legs[w];
     renderTables();
   } else {
     koResults.push({winner,loser});
   }
 
+  const next = stage==="groups"
+    ? matches[matchIndex+1]
+    : koMatches[matchIndex+1];
+
+  nextMatchInfo.textContent = next
+    ? `Als Nächstes: ${players[next.a]} vs ${players[next.b]}`
+    : "Nächstes Spiel wird vorbereitet…";
+
   matchWinner.textContent=`🏆 ${players[winner]} gewinnt`;
   matchIndex++; matchOverlay.classList.add("show");
 }
 
+/* ================= OVERLAY CLOSE ================= */
 function closeMatchOverlay(){
   matchOverlay.classList.remove("show");
 
-  if(stage==="groups" && matchIndex===matches.length){ buildKO(); return; }
-  if(stage==="ko" && matchIndex===2){ buildFinals(); return; }
+  if(stage==="groups" && matchIndex===matches.length){
+    buildKO(); return;
+  }
+  if(stage==="ko" && matchIndex===2){
+    buildFinals(); return;
+  }
   if(stage==="finals" && matchIndex===koMatches.length){
     alert("🏆 Turnier beendet!");
     return;
@@ -285,10 +339,11 @@ function closeMatchOverlay(){
 /* ================= KO ================= */
 function buildKO(){
   stage="ko"; matchIndex=0; koResults=[];
-  groups.forEach(g=>g.rank=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]));
+  const rA=rankGroup(groups[0]);
+  const rB=rankGroup(groups[1]);
   koMatches=[
-    {a:groups[0].idx[groups[0].rank[0]],b:groups[1].idx[groups[1].rank[1]]},
-    {a:groups[1].idx[groups[1].rank[0]],b:groups[0].idx[groups[0].rank[1]]}
+    {a:rA[0],b:rB[1]},
+    {a:rB[0],b:rA[1]}
   ];
   renderKO(); loadMatch();
 }
@@ -335,9 +390,20 @@ function closeCalendar(){calendar.classList.remove("show")}
 function renderTables(){
   tables.innerHTML="";
   groups.forEach((g,i)=>{
-    let h=`<h4>Gruppe ${i===0?"A":"B"}</h4><table><tr><th>Spieler</th><th>Siege</th></tr>`;
-    g.idx.forEach((p,j)=>h+=`<tr><td>${players[p]}</td><td>${g.wins[j]}</td></tr>`);
-    h+="</table>"; tables.innerHTML+=h;
+    const rank=rankGroup(g);
+    let h=`<h4>Gruppe ${i===0?"A":"B"}</h4>
+      <table><tr><th>Pl.</th><th>Spieler</th><th>S</th><th>Legs</th></tr>`;
+    rank.forEach((p,pos)=>{
+      const j=g.idx.indexOf(p);
+      h+=`<tr>
+        <td>${pos+1}</td>
+        <td>${players[p]}</td>
+        <td>${g.wins[j]}</td>
+        <td>${g.legsFor[j]}:${g.legsAgainst[j]}</td>
+      </tr>`;
+    });
+    h+="</table>";
+    tables.innerHTML+=h;
   });
 }
 
@@ -346,8 +412,12 @@ function update(){
   l0.textContent=legs[0]; l1.textContent=legs[1];
   box0.classList.toggle("active",current===0);
   box1.classList.toggle("active",current===1);
-  throws.textContent=darts.length?`Aufnahme: ${darts.map(d=>(d.mode===2?"D":d.mode===3?"T":"")+d.v).join(" | ")}`:"Aufnahme: –";
-  checkout.textContent=checkoutMap[score[current]]?`Checkout: ${checkoutMap[score[current]]}`:"Checkout: –";
+  throws.textContent=darts.length
+    ?`Aufnahme: ${darts.map(d=>(d.mode===2?"D":d.mode===3?"T":"")+d.v).join(" | ")}`
+    :"Aufnahme: –";
+  checkout.textContent=checkoutMap[score[current]]
+    ?`Checkout: ${checkoutMap[score[current]]}`
+    :"Checkout: –";
 }
 function setMode(m){
   mode=m;
