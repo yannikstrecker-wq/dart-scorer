@@ -73,10 +73,11 @@ body{
 
 /* BOARD */
 .board-wrap{display:flex;justify-content:center;margin:10px 0}
-svg{width:320px;height:320px;pointer-events:none}
+svg{width:320px;height:320px;pointer-events:auto} /* <<< WICHTIG */
 .hit-area{fill:transparent;pointer-events:auto}
-.bull25{fill:var(--green);pointer-events:auto}
-.bull50{fill:var(--red);pointer-events:auto}
+text{pointer-events:none} /* <<< WICHTIG */
+.bull25{fill:var(--green)}
+.bull50{fill:var(--red)}
 
 /* ACTIONS */
 .actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
@@ -135,8 +136,8 @@ svg{width:320px;height:320px;pointer-events:none}
 <div class="board-wrap">
 <svg viewBox="0 0 200 200">
   <circle cx="100" cy="100" r="95" fill="#000" stroke="#0f5d35" stroke-width="6"/>
-  <circle cx="100" cy="100" r="22" class="bull25" onclick="hitBull(25)"/>
-  <circle cx="100" cy="100" r="12" class="bull50" onclick="hitBull(50)"/>
+  <circle cx="100" cy="100" r="22" class="bull25 hit-area" onclick="hitBull(25)"/>
+  <circle cx="100" cy="100" r="12" class="bull50 hit-area" onclick="hitBull(50)"/>
   <g id="nums"></g>
 </svg>
 </div>
@@ -171,18 +172,21 @@ numbers.forEach((n,i)=>{
   const y=cy+r*Math.sin(a);
 
   const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-  c.setAttribute("cx",x);c.setAttribute("cy",y);
-  c.setAttribute("r",18);c.setAttribute("class","hit-area");
+  c.setAttribute("cx",x);
+  c.setAttribute("cy",y);
+  c.setAttribute("r",18);
+  c.setAttribute("class","hit-area");
   c.onclick=()=>hit(n);
   nums.appendChild(c);
 
   const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-  t.setAttribute("x",x);t.setAttribute("y",y);
-  t.setAttribute("fill","#fff");t.setAttribute("font-size","14");
+  t.setAttribute("x",x);
+  t.setAttribute("y",y);
+  t.setAttribute("fill","#fff");
+  t.setAttribute("font-size","14");
   t.setAttribute("font-weight","900");
   t.setAttribute("text-anchor","middle");
   t.setAttribute("dominant-baseline","middle");
-  t.style.pointerEvents="none";
   t.textContent=n;
   nums.appendChild(t);
 });
