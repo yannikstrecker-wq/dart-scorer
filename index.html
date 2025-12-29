@@ -16,22 +16,18 @@
   --text:#f5f5f5;
   --muted:#9aa4a1;
 }
-
 *{box-sizing:border-box}
-
 body{
   margin:0;
   background:radial-gradient(circle at top,#1b5e3a 0%,#050806 70%);
-  font-family:system-ui, -apple-system, Segoe UI, Roboto;
+  font-family:system-ui,-apple-system,Segoe UI,Roboto;
   color:var(--text);
   padding:10px;
 }
-
 .app{max-width:900px;margin:auto}
 
 /* HEADER */
-.header{text-align:center;margin-bottom:8px}
-.header h1{margin:4px 0}
+.header{text-align:center;margin-bottom:6px}
 
 /* PLAYERS */
 .players{
@@ -63,12 +59,21 @@ body{
 .score{font-size:40px;font-weight:900}
 .avg,.legs{font-size:13px;color:var(--muted)}
 
-/* MULTIPLIER */
-.modes{
-  display:flex;
-  gap:8px;
-  margin:12px 0;
+/* CHECKOUT HINT */
+.checkout{
+  margin:8px 0;
+  padding:8px;
+  text-align:center;
+  border-radius:8px;
+  background:#000;
+  border:2px solid #0f5d35;
+  font-weight:800;
 }
+.checkout.ok{border-color:var(--green);color:#9cffc8}
+.checkout.no{border-color:#333;color:#777}
+
+/* MODES */
+.modes{display:flex;gap:8px;margin:10px 0}
 .mode{
   flex:1;
   padding:12px;
@@ -86,11 +91,7 @@ body{
 }
 
 /* THROWS */
-.throws{
-  display:flex;
-  gap:8px;
-  margin-bottom:10px;
-}
+.throws{display:flex;gap:8px;margin-bottom:8px}
 .throw{
   flex:1;
   padding:10px;
@@ -102,37 +103,17 @@ body{
 }
 
 /* BOARD */
-.board-wrap{
-  display:flex;
-  justify-content:center;
-  margin:14px 0;
-  position:relative;
-  z-index:1;
-}
-svg{
-  width:320px;
-  height:320px;
-  pointer-events:none; /* <<< WICHTIG */
-}
-
-/* TOUCH AREAS */
-.hit-area{
-  fill:transparent;
-  pointer-events:auto; /* <<< WICHTIG */
-  cursor:pointer;
-}
-
-/* BULL */
+.board-wrap{display:flex;justify-content:center;margin:10px 0}
+svg{width:320px;height:320px;pointer-events:none}
+.hit-area{fill:transparent;pointer-events:auto}
 .bull25{fill:var(--green);pointer-events:auto}
 .bull50{fill:var(--red);pointer-events:auto}
 
 /* ACTIONS */
 .actions{
   display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-  position:relative;
-  z-index:2; /* <<< ÜBER SVG */
+  grid-template-columns:1fr 1fr 1fr;
+  gap:8px;
 }
 .btn{
   padding:14px;
@@ -146,9 +127,27 @@ svg{
 .btn.green{background:var(--green);color:#000;border-color:var(--gold)}
 .btn.red{background:var(--red);border-color:#fff}
 
-/* FOOTER */
+/* OVERLAY */
+.overlay{
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;
+  align-items:center;
+  justify-content:center;
+  z-index:999;
+}
+.overlay.show{display:flex}
+.overlay-box{
+  background:#000;
+  border:3px solid var(--gold);
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+}
+.overlay-box h2{margin:0;color:var(--gold)}
+
 .footer{
-  margin-top:12px;
+  margin-top:10px;
   text-align:center;
   font-size:12px;
   color:var(--muted);
@@ -160,9 +159,7 @@ svg{
 <body>
 <div class="app">
 
-<div class="header">
-  <h1>🎯 Dart Scorer 501</h1>
-</div>
+<div class="header"><h2>🎯 Dart Scorer 501</h2></div>
 
 <div class="players">
   <div class="player active" id="p0">
@@ -179,6 +176,8 @@ svg{
   </div>
 </div>
 
+<div class="checkout" id="checkout">Checkout: –</div>
+
 <div class="modes">
   <div class="mode active" data-m="1">SINGLE</div>
   <div class="mode" data-m="2">DOUBLE</div>
@@ -190,18 +189,15 @@ svg{
 <div class="board-wrap">
 <svg viewBox="0 0 200 200">
   <circle cx="100" cy="100" r="95" fill="#000" stroke="#0f5d35" stroke-width="6"/>
-
-  <!-- BULL -->
   <circle cx="100" cy="100" r="22" class="bull25" onclick="hitBull(25)"/>
   <circle cx="100" cy="100" r="12" class="bull50" onclick="hitBull(50)"/>
-
-  <!-- NUMBERS -->
   <g id="nums"></g>
 </svg>
 </div>
 
 <div class="actions">
-  <div class="btn green" onclick="endRound()">Runde abschließen</div>
+  <div class="btn" onclick="undo()">↩️ Undo</div>
+  <div class="btn green" onclick="endRound()">Runde</div>
   <div class="btn red" onclick="bust()">Bust</div>
 </div>
 
@@ -211,38 +207,34 @@ svg{
 
 </div>
 
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2 id="overlayText"></h2>
+    <br>
+    <div class="btn green" onclick="newMatch()">Neues Match</div>
+  </div>
+</div>
+
 <script>
 const numbers=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
 const nums=document.getElementById("nums");
-
 const cx=100,cy=100,r=70;
+
 numbers.forEach((n,i)=>{
   const a=(i/numbers.length)*2*Math.PI-Math.PI/2;
   const x=cx+r*Math.cos(a);
   const y=cy+r*Math.sin(a);
-
   const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-  c.setAttribute("cx",x);
-  c.setAttribute("cy",y);
-  c.setAttribute("r",18);
-  c.setAttribute("class","hit-area");
+  c.setAttribute("cx",x);c.setAttribute("cy",y);
+  c.setAttribute("r",18);c.setAttribute("class","hit-area");
   c.onclick=()=>hit(n);
   nums.appendChild(c);
-
-  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-  t.setAttribute("x",x);
-  t.setAttribute("y",y);
-  t.setAttribute("fill","#fff");
-  t.setAttribute("font-size","14");
-  t.setAttribute("font-weight","900");
-  t.setAttribute("text-anchor","middle");
-  t.setAttribute("dominant-baseline","middle");
-  t.textContent=n;
-  nums.appendChild(t);
 });
 
 let scores=[501,501],legs=[0,0],cur=0,mode=1;
-let throws=[],start=501,darts=[0,0],points=[0,0];
+let throws=[],turnStart=501;
+let darts=[0,0],points=[0,0];
+let gameOver=false;
 
 document.querySelectorAll(".mode").forEach(m=>{
   m.onclick=()=>{
@@ -253,44 +245,70 @@ document.querySelectorAll(".mode").forEach(m=>{
 });
 
 function hit(n){
-  if(throws.length>=3)return;
+  if(gameOver||throws.length>=3)return;
   const v=n*mode;
-  throws.push(v);
+  throws.push({v});
   darts[cur]++; points[cur]+=v;
-  renderThrows(); updateAvg();
+  render(); updateAvg(); updateCheckout();
 }
 function hitBull(v){
-  if(throws.length>=3)return;
-  throws.push(v);
+  if(gameOver||throws.length>=3)return;
+  throws.push({v});
   darts[cur]++; points[cur]+=v;
-  renderThrows(); updateAvg();
+  render(); updateAvg(); updateCheckout();
 }
-
-function renderThrows(){
-  const el=document.getElementById("throws");
-  el.innerHTML="";
-  throws.forEach(v=>{
+function undo(){
+  if(!throws.length||gameOver)return;
+  const last=throws.pop();
+  darts[cur]--; points[cur]-=last.v;
+  render(); updateAvg(); updateCheckout();
+}
+function render(){
+  throwsEl.innerHTML="";
+  throws.forEach(t=>{
     const d=document.createElement("div");
     d.className="throw";
-    d.textContent=v;
-    el.appendChild(d);
+    d.textContent=t.v;
+    throwsEl.appendChild(d);
   });
 }
-
 function endRound(){
-  const sum=throws.reduce((a,b)=>a+b,0);
+  if(gameOver)return;
+  const sum=throws.reduce((a,b)=>a+b.v,0);
   const rest=scores[cur]-sum;
-  if(rest<0||rest===1)scores[cur]=start;
-  else if(rest===0 && throws.at(-1)%2===0){scores[cur]=0;legs[cur]++}
-  else scores[cur]=rest;
+
+  if(rest===0 && throws.at(-1).v%2===0){
+    scores[cur]=0;
+    legs[cur]++;
+    if(legs[cur]===2){
+      endMatch();
+      return;
+    }
+  }else if(rest<0||rest===1){
+    scores[cur]=turnStart;
+  }else{
+    scores[cur]=rest;
+  }
   next();
 }
-function bust(){scores[cur]=start;next()}
-
+function bust(){scores[cur]=turnStart;next()}
 function next(){
-  throws=[]; renderThrows();
-  cur=1-cur; start=scores[cur];
-  update();
+  throws=[];render();
+  cur=1-cur;
+  turnStart=scores[cur];
+  update();updateCheckout();
+}
+function endMatch(){
+  gameOver=true;
+  document.getElementById("overlayText").textContent=
+    `${document.querySelectorAll("input")[cur].value} gewinnt das Match!`;
+  overlay.classList.add("show");
+}
+function newMatch(){
+  scores=[501,501];legs=[0,0];darts=[0,0];points=[0,0];
+  cur=0;turnStart=501;gameOver=false;
+  overlay.classList.remove("show");
+  update();updateAvg();updateCheckout();render();
 }
 function update(){
   score0.textContent=scores[0];
@@ -304,7 +322,18 @@ function updateAvg(){
   avg0.textContent=(points[0]/Math.max(1,darts[0])*3).toFixed(1);
   avg1.textContent=(points[1]/Math.max(1,darts[1])*3).toFixed(1);
 }
-update();
+function updateCheckout(){
+  const c=document.getElementById("checkout");
+  const s=scores[cur];
+  if(s<=170){
+    c.textContent=`Checkout möglich bei ${s}`;
+    c.className="checkout ok";
+  }else{
+    c.textContent="Checkout: –";
+    c.className="checkout no";
+  }
+}
+update();updateCheckout();
 </script>
 </body>
 </html>
