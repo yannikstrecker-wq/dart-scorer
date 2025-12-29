@@ -36,14 +36,14 @@ th{color:var(--gold)}
 .playerBox.active{border-color:var(--gold)}
 .score{font-size:42px;font-weight:900}
 .throws{text-align:center;font-weight:800;color:#9cffc8;margin-top:6px}
-.checkout{text-align:center;font-weight:700;color:#ffd700}
+.checkout{text-align:center;font-weight:800;color:#ffd700}
 
 /* INPUT */
 .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.mode{padding:10px;font-weight:900;border-radius:10px;border:2px solid #0f5d35;background:#000}
-.mode.active.single{background:#333}
-.mode.active.double{background:var(--green);color:#000}
-.mode.active.triple{background:var(--red)}
+.mode{padding:10px;font-weight:900;border-radius:10px;border:2px solid #0f5d35;background:#000;color:#eaeaea}
+.mode.single.active{background:#333}
+.mode.double.active{background:var(--green);color:#001a0f}
+.mode.triple.active{background:var(--red);color:#fff}
 
 .numbers{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .num{padding:14px;font-size:18px;font-weight:900;background:#000;color:#fff;border:2px solid #0f5d35;border-radius:10px}
@@ -52,7 +52,7 @@ th{color:var(--gold)}
 /* BUTTONS */
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .btn{padding:14px;font-weight:900;border-radius:12px;border:none}
-.green{background:var(--green);color:#000}
+.green{background:var(--green);color:#001a0f}
 .red{background:var(--red);color:#fff}
 
 /* FLOAT */
@@ -68,10 +68,16 @@ th{color:var(--gold)}
 /* OVERLAY */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;justify-content:center;z-index:999}
 .overlay.show{display:flex}
-.box{background:#000;border:3px solid var(--gold);border-radius:16px;padding:24px;width:90%;max-width:520px;text-align:center}
+.box{background:#000;border:3px solid var(--gold);border-radius:16px;padding:20px;width:90%;max-width:560px;text-align:center}
 .matchRow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333}
 .live{color:var(--gold)}
 .done{color:#9cffc8}
+
+/* KO TREE */
+.ko{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.koCol{background:#000;border:1px solid #333;border-radius:10px;padding:8px}
+.koMatch{padding:6px;border-bottom:1px solid #333}
+.koWin{color:#9cffc8;font-weight:900}
 </style>
 </head>
 
@@ -99,6 +105,11 @@ th{color:var(--gold)}
 <div class="panel">
   <h3>Gruppentabellen</h3>
   <div id="tables"></div>
+</div>
+
+<div class="panel">
+  <h3>Turnierbaum (KO)</h3>
+  <div id="koTree" class="ko"></div>
 </div>
 
 <div class="panel">
@@ -160,11 +171,44 @@ let players=[],stats=[],groups=[],matches=[],koMatches=[];
 let stage="groups",matchIndex=0,current=0,mode=1,throwsCount=0;
 let score=[501,501],legs=[0,0],darts=[];
 
-/* CHECKOUT TABLE (vollständig gekürzt auf die Praxis – funktioniert korrekt) */
+/* ================= FULL CHECKOUT (170–2) ================= */
 const checkoutMap={
-170:"T20 T20 Bull",167:"T20 T19 Bull",160:"T20 T20 D20",
-100:"T20 D20",80:"T20 D10",60:"20 D20",
-50:"Bull",40:"D20",32:"D16",24:"D12",16:"D8",8:"D4",4:"D2",2:"D1"
+170:"T20 T20 Bull",167:"T20 T19 Bull",164:"T20 T18 Bull",161:"T20 T17 Bull",
+160:"T20 T20 D20",158:"T20 T20 D19",156:"T20 T20 D18",155:"T20 T19 D19",
+154:"T20 T18 D20",153:"T20 T19 D18",152:"T20 T20 D16",151:"T20 T17 D20",
+150:"T20 T18 D18",149:"T20 T19 D16",148:"T20 T20 D14",147:"T20 T17 D18",
+146:"T20 T18 D16",145:"T20 T19 D14",144:"T20 T20 D12",143:"T20 T17 D16",
+142:"T20 T18 D14",141:"T20 T19 D12",140:"T20 T20 D10",139:"T20 T19 D11",
+138:"T20 T18 D12",137:"T20 T19 D10",136:"T20 T20 D8",135:"T20 T17 D12",
+134:"T20 T18 D10",133:"T20 T19 D8",132:"T20 T20 D6",131:"T20 T17 D10",
+130:"T20 T20 D5",129:"T19 T20 D6",128:"T18 T20 D7",127:"T20 T17 D8",
+126:"T19 T19 D6",125:"Bull T20 D8",124:"T20 T16 D8",123:"T19 T16 D9",
+122:"T18 T20 D4",121:"T20 T11 D14",120:"T20 20 D20",119:"T19 T12 D13",
+118:"T20 18 D20",117:"T20 17 D20",116:"T20 16 D20",115:"T20 15 D20",
+114:"T20 14 D20",113:"T20 13 D20",112:"T20 12 D20",111:"T20 11 D20",
+110:"T20 10 D20",109:"T20 9 D20",108:"T20 8 D20",107:"T20 7 D20",
+106:"T20 6 D20",105:"T20 5 D20",104:"T20 4 D20",103:"T20 3 D20",
+102:"T20 2 D20",101:"T20 1 D20",100:"T20 D20",
+99:"T19 10 D16",98:"T20 D19",97:"T19 D20",96:"T20 D18",95:"T19 D19",
+94:"T18 D20",93:"T19 D18",92:"T20 D16",91:"T17 D20",90:"T18 D18",
+89:"T19 D16",88:"T16 D20",87:"T17 D18",86:"T18 D16",85:"T15 D20",
+84:"T20 D12",83:"T17 D16",82:"T14 D20",81:"T19 D12",80:"T20 D10",
+79:"T13 D20",78:"T18 D12",77:"T19 D10",76:"T20 D8",75:"T17 D12",
+74:"T14 D16",73:"T19 D8",72:"T16 D12",71:"T13 D16",70:"T18 D8",
+69:"T19 D6",68:"T20 D4",67:"T17 D8",66:"T10 D18",65:"T19 D4",
+64:"T16 D8",63:"T13 D12",62:"T10 D16",61:"T15 D8",60:"20 D20",
+59:"19 D20",58:"18 D20",57:"17 D20",56:"16 D20",55:"15 D20",
+54:"14 D20",53:"13 D20",52:"12 D20",51:"11 D20",50:"Bull",
+49:"17 D16",48:"16 D16",47:"15 D16",46:"14 D16",45:"13 D16",
+44:"12 D16",43:"11 D16",42:"10 D16",41:"9 D16",40:"D20",
+39:"7 D16",38:"D19",37:"5 D16",36:"D18",35:"3 D16",
+34:"D17",33:"1 D16",32:"D16",31:"15 D8",30:"D15",
+29:"13 D8",28:"D14",27:"11 D8",26:"D13",25:"9 D8",
+24:"D12",23:"7 D8",22:"D11",21:"5 D8",20:"D10",
+19:"3 D8",18:"D9",17:"1 D8",16:"D8",15:"7 D4",
+14:"D7",13:"5 D4",12:"D6",11:"3 D4",10:"D5",
+9:"1 D4",8:"D4",7:"3 D2",6:"D3",5:"1 D2",
+4:"D2",3:"1 D1",2:"D1"
 };
 
 /* ================= START ================= */
@@ -177,6 +221,7 @@ function start(){
     {idx:[3,4,5],wins:[0,0,0],legs:[0,0,0]}
   ];
 
+  // A, B, A, B Reihenfolge
   matches=[
     {a:0,b:1,g:0},{a:3,b:4,g:1},
     {a:0,b:2,g:0},{a:3,b:5,g:1},
@@ -222,8 +267,7 @@ function throwDart(v){
   darts.push({v,mode,val});
   const p=(stage==="groups"?matches[matchIndex]:koMatches[matchIndex])[current===0?"a":"b"];
   stats[p].darts++;stats[p].points+=val;
-  throwsCount++;
-  setMode(1);
+  throwsCount++; setMode(1);
   update();
 }
 
@@ -240,7 +284,7 @@ function next(){
   const last=darts.at(-1);
 
   if(score[current]===0){
-    if(last && (last.mode===2||last.v===50)){
+    if(last && (last.mode===2 || last.v===50)){
       legs[current]++;
       const p=m[current===0?"a":"b"];
       stats[p].legs++;
@@ -253,11 +297,9 @@ function next(){
       bust();
     }
   }
-  if(score[current]<0||score[current]===1)bust();
+  if(score[current]<0 || score[current]===1) bust();
 
-  current=1-current;
-  throwsCount=0;
-  darts=[];
+  current=1-current; throwsCount=0; darts=[];
   update();
 }
 
@@ -272,40 +314,61 @@ function finishMatch(winnerSide){
   if(stage==="groups"){
     const g=groups[m.g];
     const idx=g.idx.indexOf(m[winnerSide===0?"a":"b"]);
-    g.wins[idx]++;
-    g.legs[idx]+=legs[winnerSide];
+    g.wins[idx]++; g.legs[idx]+=legs[winnerSide];
   }
 
   matchIndex++;
   renderTables();
   if(stage==="groups" && matchIndex===matches.length){
-    buildKO();return;
+    buildKO(); return;
   }
   if(stage==="ko" && matchIndex===koMatches.length){
-    alert("Turnier beendet");return;
+    alert("🏆 Turniersieger: "+players[m[winnerSide===0?"a":"b"]]);
+    return;
   }
   loadMatch();
 }
 
 /* ================= KO ================= */
 function buildKO(){
-  stage="ko";matchIndex=0;
+  stage="ko"; matchIndex=0;
   groups.forEach(g=>{
-    g.rank=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]);
+    g.rank=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a] || g.legs[b]-g.legs[a]);
   });
   koMatches=[
-    {a:groups[0].idx[groups[0].rank[0]],b:groups[1].idx[groups[1].rank[1]]},
-    {a:groups[1].idx[groups[1].rank[0]],b:groups[0].idx[groups[0].rank[1]]}
+    {a:groups[0].idx[groups[0].rank[0]], b:groups[1].idx[groups[1].rank[1]], r:"HF1"},
+    {a:groups[1].idx[groups[1].rank[0]], b:groups[0].idx[groups[0].rank[1]], r:"HF2"}
   ];
+  renderKO();
   loadMatch();
+}
+
+function renderKO(){
+  koTree.innerHTML="";
+  const col1=document.createElement("div"); col1.className="koCol";
+  const col2=document.createElement("div"); col2.className="koCol";
+  const col3=document.createElement("div"); col3.className="koCol";
+  col1.innerHTML="<b>Halbfinale</b>";
+  col2.innerHTML="<b>Finale</b>";
+  col3.innerHTML="<b>Sieger</b>";
+
+  koMatches.forEach((m,i)=>{
+    const d=document.createElement("div");
+    d.className="koMatch";
+    d.textContent=`${players[m.a]} vs ${players[m.b]}`;
+    col1.appendChild(d);
+  });
+
+  col2.innerHTML+=`<div class="koMatch">HF1 Sieger vs HF2 Sieger</div>`;
+  col3.innerHTML+=`<div class="koMatch koWin">—</div>`;
+
+  koTree.append(col1,col2,col3);
 }
 
 /* ================= UI ================= */
 function update(){
-  s0.textContent=score[0];
-  s1.textContent=score[1];
-  l0.textContent=legs[0];
-  l1.textContent=legs[1];
+  s0.textContent=score[0]; s1.textContent=score[1];
+  l0.textContent=legs[0]; l1.textContent=legs[1];
   box0.classList.toggle("active",current===0);
   box1.classList.toggle("active",current===1);
 
