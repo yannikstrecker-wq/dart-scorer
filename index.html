@@ -13,7 +13,6 @@
   --gold:#d4af37;
   --bg:#050806;
   --text:#f5f5f5;
-  --muted:#9aa4a1;
 }
 *{box-sizing:border-box}
 body{
@@ -45,6 +44,24 @@ body{
   margin-bottom:12px;
 }
 
+/* SETUP */
+.setup input{
+  width:100%;
+  padding:10px;
+  margin-bottom:6px;
+  font-size:16px;
+  font-weight:700;
+  border-radius:8px;
+  border:none;
+  text-align:center;
+}
+
+/* TABLES */
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border-bottom:1px solid #333;padding:6px;text-align:center}
+th{color:var(--gold)}
+.qualify{color:#9cffc8}
+
 /* MATCH */
 .scores{
   display:grid;
@@ -59,8 +76,6 @@ body{
 }
 .playerBox.active{border-color:var(--gold)}
 .score{font-size:42px;font-weight:900}
-
-/* THROWS */
 .throws{text-align:center;margin-top:6px;font-weight:800;color:#9cffc8}
 
 /* INPUT */
@@ -82,8 +97,8 @@ body{
   border:2px solid #0f5d35;border-radius:10px
 }
 .bull{color:#ffd700}
-.num:disabled{opacity:.3}
 
+/* ACTIONS */
 .actions{
   display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px
 }
@@ -94,36 +109,21 @@ body{
 .green{background:var(--green);color:#000}
 .red{background:var(--red);color:#fff}
 
-/* FLOAT BUTTONS */
-.statBtn,.calBtn{
-  position:fixed;bottom:14px;
-  background:var(--gold);color:#000;
-  font-weight:900;border-radius:50%;
-  border:none;font-size:18px;
-  padding:12px 14px
-}
-.statBtn{right:14px}
-.calBtn{left:14px}
-
 /* OVERLAY */
 .overlay{
   position:fixed;inset:0;
-  background:rgba(0,0,0,.9);
+  background:rgba(0,0,0,.95);
   display:none;align-items:center;justify-content:center;
   z-index:999
 }
 .overlay.show{display:flex}
 .box{
-  background:#000;padding:24px;
-  border-radius:16px;border:3px solid var(--gold);
-  width:90%;max-width:520px
+  background:#000;padding:28px;
+  border-radius:18px;border:4px solid var(--gold);
+  text-align:center;
+  max-width:500px;width:90%
 }
-.matchRow{
-  display:flex;justify-content:space-between;
-  padding:6px 0;border-bottom:1px solid #333
-}
-.matchRow.done{color:#9cffc8}
-.matchRow.live{color:var(--gold)}
+.box h1{color:var(--gold)}
 </style>
 </head>
 
@@ -133,6 +133,30 @@ body{
 <div class="header">
   <h1>🎯 Dart Turnier</h1>
   <p>6 Spieler · Gruppen → KO · Best of 3 · Double Out</p>
+</div>
+
+<!-- SETUP -->
+<div class="panel setup" id="setup">
+  <h3>Spielernamen eingeben</h3>
+  <input id="p0" placeholder="Spieler A1">
+  <input id="p1" placeholder="Spieler A2">
+  <input id="p2" placeholder="Spieler A3">
+  <input id="p3" placeholder="Spieler B1">
+  <input id="p4" placeholder="Spieler B2">
+  <input id="p5" placeholder="Spieler B3">
+  <button class="btn green" onclick="startTournament()">Turnier starten</button>
+</div>
+
+<!-- TURNIER -->
+<div id="tournament" style="display:none">
+
+<div class="panel">
+  <h3>Gruppentabellen</h3>
+  <div id="groupTables"></div>
+</div>
+
+<div class="panel">
+  <h3 id="stageTitle">Gruppenphase</h3>
 </div>
 
 <div class="panel">
@@ -167,64 +191,70 @@ body{
 
 </div>
 
-<button class="calBtn" onclick="openMatches()">📅</button>
-<button class="statBtn" onclick="openStats()">📊</button>
-
-<!-- MATCH LIST -->
-<div class="overlay" id="matchOverlay">
+<!-- WINNER -->
+<div class="overlay" id="winnerOverlay">
   <div class="box">
-    <h2>Spielübersicht</h2>
-    <div id="matchList"></div><br>
-    <button class="btn green" onclick="closeMatches()">Schließen</button>
-  </div>
-</div>
-
-<!-- STATS -->
-<div class="overlay" id="statsOverlay">
-  <div class="box">
-    <h2>Statistik</h2>
-    <div id="statsContent"></div><br>
-    <button class="btn green" onclick="closeStats()">Schließen</button>
+    <h1>🏆 Turniersieger</h1>
+    <h2 id="winnerName"></h2>
+    <p style="margin-top:20px;font-size:18px">
+      Steve, du hast einen schönen Weihnachtsbaum 🎄
+    </p>
   </div>
 </div>
 
 <script>
-/* ===== SETUP ===== */
-const players=["A1","A2","A3","B1","B2","B3"];
-const stats=players.map(()=>({matches:0,wins:0,legs:0,darts:0,points:0}));
-
-/* Gruppe A + B im Wechsel */
-const matches=[
-  {a:0,b:1,group:"A",done:false},
-  {a:3,b:4,group:"B",done:false},
-  {a:0,b:2,group:"A",done:false},
-  {a:3,b:5,group:"B",done:false},
-  {a:1,b:2,group:"A",done:false},
-  {a:4,b:5,group:"B",done:false}
-];
-
-let matchIndex=0;
+/* ===== STATE ===== */
+let players=[],groups,groupMatches,koMatches=[],stage="groups",matchIndex=0;
 let scores=[501,501],legs=[0,0],current=0,throws=0,history=[],mode=1;
 
-/* INPUT */
-const nums=document.getElementById("numbers");
-for(let i=1;i<=20;i++)addNum(i);
-addNum(25,"Bull","bull");addNum(50,"DBull","bull");addNum(0,"0");
+/* ===== START ===== */
+function startTournament(){
+  players=[p0,p1,p2,p3,p4,p5].map((i,n)=>i.value||`Spieler ${n+1}`);
+  groups=[
+    {name:"Gruppe A",idx:[0,1,2],wins:[0,0,0],legs:[0,0,0]},
+    {name:"Gruppe B",idx:[3,4,5],wins:[0,0,0],legs:[0,0,0]}
+  ];
+
+  groupMatches=[
+    {a:0,b:1,g:0},{a:3,b:4,g:1},
+    {a:0,b:2,g:0},{a:3,b:5,g:1},
+    {a:1,b:2,g:0},{a:4,b:5,g:1}
+  ];
+
+  setup.style.display="none";
+  tournament.style.display="block";
+
+  buildNumbers();
+  renderTables();
+  loadMatch();
+}
+
+/* ===== INPUT ===== */
+function buildNumbers(){
+  numbers.innerHTML="";
+  for(let i=1;i<=20;i++)addNum(i);
+  addNum(25,"Bull","bull");
+  addNum(50,"DBull","bull");
+  addNum(0,"0");
+}
 function addNum(v,l,c){
   const b=document.createElement("button");
   b.className="num "+(c||"");
   b.textContent=l||v;
   b.onclick=()=>throwDart(v);
-  nums.appendChild(b);
+  numbers.appendChild(b);
 }
 
-/* GAME */
+/* ===== GAME ===== */
+function getMatch(){
+  return stage==="groups"?groupMatches[matchIndex]:koMatches[matchIndex];
+}
 function loadMatch(){
   scores=[501,501];legs=[0,0];current=0;throws=0;history=[];
-  const m=matches[matchIndex];
+  const m=getMatch();
   name0.textContent=players[m.a];
   name1.textContent=players[m.b];
-  matchTitle.textContent=`Gruppe ${m.group}: ${players[m.a]} vs ${players[m.b]}`;
+  matchTitle.textContent=`${players[m.a]} vs ${players[m.b]}`;
   updateUI();updateThrows();
 }
 function throwDart(v){
@@ -245,17 +275,65 @@ function nextTurn(){
   if(scores[current]===0){
     legs[current]++;
     if(legs[current]===2){
-      matches[matchIndex].done=true;
-      matchIndex++;
-      loadMatch();return;
+      finishMatch();
+      return;
     }
     scores=[501,501];
   }
   current=1-current;throws=0;history=[];
   updateUI();updateThrows();
 }
+function finishMatch(){
+  const m=getMatch();
+  const winner=current===0?m.a:m.b;
 
-/* UI */
+  if(stage==="groups"){
+    const g=groups[m.g];
+    const idx=g.idx.indexOf(winner);
+    g.wins[idx]++;g.legs[idx]+=legs[current];
+  }
+
+  matchIndex++;
+  if(stage==="groups" && matchIndex===groupMatches.length){
+    buildKO();
+    return;
+  }
+  if(stage==="ko" && matchIndex===koMatches.length){
+    showWinner(winner);
+    return;
+  }
+  loadMatch();
+}
+
+/* ===== KO ===== */
+function buildKO(){
+  stage="ko";matchIndex=0;
+  document.getElementById("stageTitle").textContent="KO-Phase";
+  groups.forEach(g=>{
+    g.rank=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]);
+  });
+  koMatches=[
+    {a:groups[0].idx[groups[0].rank[0]],b:groups[1].idx[groups[1].rank[1]]},
+    {a:groups[1].idx[groups[1].rank[0]],b:groups[0].idx[groups[0].rank[1]]}
+  ];
+  renderTables();
+  loadMatch();
+}
+
+/* ===== UI ===== */
+function renderTables(){
+  groupTables.innerHTML="";
+  groups.forEach(g=>{
+    let order=[0,1,2].sort((a,b)=>g.wins[b]-g.wins[a]||g.legs[b]-g.legs[a]);
+    let html=`<h4>${g.name}</h4><table><tr><th>Spieler</th><th>Siege</th><th>Legs</th></tr>`;
+    order.forEach((i,idx)=>{
+      html+=`<tr class="${idx<2?'qualify':''}">
+        <td>${players[g.idx[i]]}</td><td>${g.wins[i]}</td><td>${g.legs[i]}</td></tr>`;
+    });
+    html+="</table>";
+    groupTables.innerHTML+=html;
+  });
+}
 function updateUI(){
   score0.textContent=scores[0];
   score1.textContent=scores[1];
@@ -265,42 +343,17 @@ function updateUI(){
   box1.classList.toggle("active",current===1);
 }
 function updateThrows(){
-  throwsEl.textContent=history.length?"Aufnahme: "+history.join(" | "):"Aufnahme: –";
+  throws.textContent=history.length?"Aufnahme: "+history.join(" | "):"Aufnahme: –";
 }
-
-/* MATCH OVERLAY */
-function openMatches(){
-  matchList.innerHTML="";
-  matches.forEach((m,i)=>{
-    const d=document.createElement("div");
-    d.className="matchRow "+(i===matchIndex?"live":m.done?"done":"");
-    d.innerHTML=`<span>${players[m.a]} vs ${players[m.b]}</span><span>${m.done?"✓":""}</span>`;
-    matchList.appendChild(d);
-  });
-  matchOverlay.classList.add("show");
-}
-function closeMatches(){matchOverlay.classList.remove("show");}
-
-/* STATS */
-function openStats(){
-  let html="<table><tr><th>Spieler</th><th>Darts</th><th>Ø</th></tr>";
-  stats.forEach((s,i)=>{
-    const avg=s.darts?((s.points/s.darts)*3).toFixed(1):"0.0";
-    html+=`<tr><td>${players[i]}</td><td>${s.darts}</td><td>${avg}</td></tr>`;
-  });
-  html+="</table>";
-  statsContent.innerHTML=html;
-  statsOverlay.classList.add("show");
-}
-function closeStats(){statsOverlay.classList.remove("show");}
-
 function setMode(m){
   mode=m;
   document.querySelectorAll(".mode").forEach(b=>b.classList.remove("active"));
   document.querySelector(`.mode.${m===1?"single":m===2?"double":"triple"}`).classList.add("active");
 }
-
-loadMatch();
+function showWinner(idx){
+  winnerName.textContent=players[idx];
+  winnerOverlay.classList.add("show");
+}
 </script>
 </body>
 </html>
