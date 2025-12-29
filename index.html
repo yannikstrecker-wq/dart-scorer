@@ -55,24 +55,35 @@ th{color:var(--gold)}
 .green{background:var(--green);color:#001a0f}
 .red{background:var(--red);color:#fff}
 
-/* KO TREE */
+/* FLOAT */
+.statBtn,.calBtn{
+  position:fixed;bottom:14px;
+  background:var(--gold);color:#000;
+  font-weight:900;border-radius:50%;border:none;
+  padding:12px 14px;font-size:18px
+}
+.statBtn{right:14px}
+.calBtn{left:14px}
+
+/* KO */
 .koMatch.live{color:var(--gold);font-weight:900}
 .koMatch.done{color:#9cffc8}
 
 /* OVERLAY */
 .overlay{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.9);
-  display:none;align-items:center;justify-content:center;
-  z-index:999
+  position:fixed;inset:0;background:rgba(0,0,0,.9);
+  display:none;align-items:center;justify-content:center;z-index:999
 }
 .overlay.show{display:flex}
 .box{
   background:#000;border:3px solid var(--gold);
   border-radius:16px;padding:24px;
-  width:90%;max-width:520px;
+  width:90%;max-width:560px;
   text-align:center
 }
+.matchRow{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid #333}
+.live{color:var(--gold)}
+.done{color:#9cffc8}
 </style>
 </head>
 
@@ -140,7 +151,11 @@ th{color:var(--gold)}
 
 </div>
 
-<!-- MATCH ENDE OVERLAY -->
+<!-- FLOAT BUTTONS -->
+<button class="statBtn" onclick="openStats()">📊</button>
+<button class="calBtn" onclick="openCalendar()">📅</button>
+
+<!-- MATCH OVERLAY -->
 <div class="overlay" id="matchOverlay">
   <div class="box">
     <h2 id="matchWinner"></h2>
@@ -150,9 +165,27 @@ th{color:var(--gold)}
   </div>
 </div>
 
+<!-- STATS -->
+<div class="overlay" id="statsOverlay">
+  <div class="box">
+    <h2>📊 Statistik</h2>
+    <div id="statList"></div>
+    <button class="btn green" onclick="closeStats()">OK</button>
+  </div>
+</div>
+
+<!-- CALENDAR -->
+<div class="overlay" id="calendar">
+  <div class="box">
+    <h2>📅 Spielplan & Ergebnisse</h2>
+    <div id="calList"></div>
+    <button class="btn green" onclick="closeCalendar()">OK</button>
+  </div>
+</div>
+
 <script>
 /* ================= STATE ================= */
-let players=[],groups=[],matches=[],koMatches=[],stats=[];
+let players=[],stats=[],groups=[],matches=[],koMatches=[];
 let stage="groups",matchIndex=0,current=0,mode=1,throwsCount=0;
 let score=[501,501],legs=[0,0],darts=[];
 
@@ -165,29 +198,26 @@ function start(){
   stats=players.map(()=>({darts:0,points:0,legs:0,matches:0}));
 
   groups=[
-    {idx:[0,1,2],wins:[0,0,0],legs:[0,0,0]},
-    {idx:[3,4,5],wins:[0,0,0],legs:[0,0,0]}
+    {idx:[0,1,2],wins:[0,0,0]},
+    {idx:[3,4,5],wins:[0,0,0]}
   ];
 
   matches=[
-    {a:0,b:1,g:0},{a:3,b:4,g:1},
-    {a:0,b:2,g:0},{a:3,b:5,g:1},
-    {a:1,b:2,g:0},{a:4,b:5,g:1}
+    {a:0,b:1,g:"A"},{a:3,b:4,g:"B"},
+    {a:0,b:2,g:"A"},{a:3,b:5,g:"B"},
+    {a:1,b:2,g:"A"},{a:4,b:5,g:"B"}
   ];
 
   setup.style.display="none";
   game.style.display="block";
-  buildNums();
-  renderTables();
-  loadMatch();
+  buildNums(); renderTables(); loadMatch();
 }
 
 /* ================= GAME ================= */
 function buildNums(){
   nums.innerHTML="";
   for(let i=1;i<=20;i++)addNum(i);
-  addNum(25,"Bull","bull");
-  addNum(50,"DBull","bull");
+  addNum(25,"Bull","bull"); addNum(50,"DBull","bull");
 }
 function addNum(v,l,c){
   const b=document.createElement("button");
@@ -198,11 +228,10 @@ function addNum(v,l,c){
 }
 
 function loadMatch(){
-  score=[501,501];legs=[0,0];current=0;throwsCount=0;darts=[];
+  score=[501,501]; legs=[0,0]; current=0; throwsCount=0; darts=[];
   const m=stage==="groups"?matches[matchIndex]:koMatches[matchIndex];
-  n0.textContent=players[m.a];
-  n1.textContent=players[m.b];
-  matchTitle.textContent=(stage==="groups"?"Gruppe":"KO")+`: ${players[m.a]} vs ${players[m.b]}`;
+  n0.textContent=players[m.a]; n1.textContent=players[m.b];
+  matchTitle.textContent=(stage==="groups"?"Gruppe ":"KO ")+`${players[m.a]} vs ${players[m.b]}`;
   update();
 }
 
@@ -211,94 +240,76 @@ function throwDart(v){
   const val=v<=20?v*mode:v;
   score[current]-=val;
   darts.push({v,mode,val});
-  throwsCount++;
-  update();
+  stats[(stage==="groups"?matches[matchIndex]:koMatches[matchIndex])[current===0?"a":"b"]].darts++;
+  stats[(stage==="groups"?matches[matchIndex]:koMatches[matchIndex])[current===0?"a":"b"]].points+=val;
+  throwsCount++; update();
 }
 
 function undo(){
   if(!darts.length)return;
   const d=darts.pop();
   score[current]+=d.val;
-  throwsCount--;
-  update();
+  throwsCount--; update();
 }
 
 function next(){
   const m=stage==="groups"?matches[matchIndex]:koMatches[matchIndex];
   const last=darts.at(-1);
-
   if(score[current]===0 && last && (last.mode===2||last.v===50)){
     legs[current]++;
-    if(legs[current]===2){
-      finishMatch(current);
-      return;
-    }
+    stats[m[current===0?"a":"b"]].legs++;
+    if(legs[current]===2){ finishMatch(current); return; }
     score=[501,501];
   }
   if(score[current]<0||score[current]===1){
     score[current]+=darts.reduce((s,d)=>s+d.val,0);
   }
-
-  current=1-current;
-  darts=[];throwsCount=0;
-  update();
+  current=1-current; darts=[]; throwsCount=0; update();
 }
 
 function finishMatch(winnerSide){
   const m=stage==="groups"?matches[matchIndex]:koMatches[matchIndex];
-  const winnerIdx=m[winnerSide===0?"a":"b"];
+  const w=m[winnerSide===0?"a":"b"];
+  stats[w].matches++;
+  if(stage==="groups"){
+    const g=groups[m.g==="A"?0:1];
+    g.wins[g.idx.indexOf(w)]++;
+  }
+  m.result=`${legs[0]}:${legs[1]}`;
+  m.winner=w;
 
+  matchWinner.textContent=`🏆 ${players[w]} gewinnt`;
   matchIndex++;
 
-  matchWinner.textContent=`🏆 Match gewonnen von ${players[winnerIdx]}`;
-
-  if(stage==="groups" && matchIndex<matches.length){
-    nextMatch.textContent=`Nächstes Spiel: ${players[matches[matchIndex].a]} vs ${players[matches[matchIndex].b]}`;
-  }else if(stage==="groups"){
-    nextMatch.textContent="➡️ KO-Phase startet";
-  }else{
-    nextMatch.textContent="🏁 Turnier beendet";
-  }
+  if(stage==="groups" && matchIndex===matches.length){ nextMatch.textContent="➡️ KO-Phase startet"; }
+  else if(stage==="groups"){ nextMatch.textContent=`Nächstes Spiel: ${players[matches[matchIndex].a]} vs ${players[matches[matchIndex].b]}`; }
+  else{ nextMatch.textContent="🏁 Turnier beendet"; }
 
   matchOverlay.classList.add("show");
-  renderTables();
-  renderKO();
+  renderTables(); renderKO();
 }
 
 function closeMatchOverlay(){
   matchOverlay.classList.remove("show");
-
-  if(stage==="groups" && matchIndex===matches.length){
-    buildKO(); return;
-  }
-  if(stage==="ko" && matchIndex===koMatches.length){
-    alert("🏆 Turniersieger!");
-    return;
-  }
+  if(stage==="groups" && matchIndex===matches.length){ buildKO(); return; }
+  if(stage==="ko" && matchIndex===koMatches.length){ alert("🏆 Turnier beendet"); return; }
   loadMatch();
 }
 
 /* ================= KO ================= */
 function buildKO(){
   stage="ko"; matchIndex=0;
-  groups.forEach(g=>{
-    g.rank=[0,1,2];
-  });
   koMatches=[
     {a:groups[0].idx[0],b:groups[1].idx[1]},
     {a:groups[1].idx[0],b:groups[0].idx[1]}
   ];
-  renderKO();
-  loadMatch();
+  renderKO(); loadMatch();
 }
-
 function renderKO(){
   koTree.innerHTML="";
   koMatches.forEach((m,i)=>{
     const d=document.createElement("div");
-    d.className="koMatch";
-    if(i===matchIndex) d.classList.add("live");
-    if(i<matchIndex) d.classList.add("done");
+    d.className="koMatch"+(i===matchIndex?" live":i<matchIndex?" done":"");
     d.textContent=`${players[m.a]} vs ${players[m.b]}`;
     koTree.appendChild(d);
   });
@@ -306,37 +317,47 @@ function renderKO(){
 
 /* ================= UI ================= */
 function update(){
-  s0.textContent=score[0];
-  s1.textContent=score[1];
-  l0.textContent=legs[0];
-  l1.textContent=legs[1];
+  s0.textContent=score[0]; s1.textContent=score[1];
+  l0.textContent=legs[0]; l1.textContent=legs[1];
   box0.classList.toggle("active",current===0);
   box1.classList.toggle("active",current===1);
-
   if(darts.length){
     const labels=darts.map(d=>(d.mode===2?"D":d.mode===3?"T":"")+d.v);
     const sum=darts.reduce((s,d)=>s+d.val,0);
     throws.textContent=`Aufnahme: ${labels.join(" | ")} (${sum} Punkte)`;
-  }else{
-    throws.textContent="Aufnahme: –";
-  }
-
-  checkout.textContent=checkoutMap[score[current]]
-    ? "Checkout: "+checkoutMap[score[current]]
-    : "Checkout: –";
+  }else throws.textContent="Aufnahme: –";
+  checkout.textContent=checkoutMap[score[current]]?"Checkout: "+checkoutMap[score[current]]:"Checkout: –";
 }
 
 function renderTables(){
   tables.innerHTML="";
   groups.forEach((g,i)=>{
     let html=`<h4>Gruppe ${i===0?"A":"B"}</h4><table><tr><th>Spieler</th><th>Siege</th></tr>`;
-    g.idx.forEach((p,j)=>{
-      html+=`<tr><td>${players[p]}</td><td>${g.wins[j]}</td></tr>`;
-    });
-    html+="</table>";
-    tables.innerHTML+=html;
+    g.idx.forEach((p,j)=>html+=`<tr><td>${players[p]}</td><td>${g.wins[j]}</td></tr>`);
+    html+="</table>"; tables.innerHTML+=html;
   });
 }
+
+/* ================= STATS & CALENDAR ================= */
+function openStats(){
+  let h="<table><tr><th>Spieler</th><th>Ø</th><th>Legs</th><th>Matches</th></tr>";
+  stats.forEach((s,i)=>{
+    const avg=s.darts?((s.points/s.darts)*3).toFixed(1):"0.0";
+    h+=`<tr><td>${players[i]}</td><td>${avg}</td><td>${s.legs}</td><td>${s.matches}</td></tr>`;
+  });
+  h+="</table>"; statList.innerHTML=h;
+  statsOverlay.classList.add("show");
+}
+function closeStats(){statsOverlay.classList.remove("show")}
+
+function openCalendar(){
+  calList.innerHTML="";
+  [...matches,...koMatches].forEach(m=>{
+    calList.innerHTML+=`<div class="matchRow">${players[m.a]} vs ${players[m.b]} ${m.result?`— ${m.result}`:""}</div>`;
+  });
+  calendar.classList.add("show");
+}
+function closeCalendar(){calendar.classList.remove("show")}
 
 function setMode(m){
   mode=m;
