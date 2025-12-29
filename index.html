@@ -2,19 +2,17 @@
 <html lang="de">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="theme-color" content="#1e7f4f">
-<title>Dart Scorer 501</title>
+<title>Dart Turnier – 6 Spieler</title>
 
 <style>
 :root{
+  --bg:#050806;
   --green:#1e7f4f;
   --red:#b8322a;
   --gold:#d4af37;
-  --bg:#050806;
   --text:#f5f5f5;
-  --muted:#9aa4a1;
 }
 *{box-sizing:border-box}
 body{
@@ -26,297 +24,283 @@ body{
 }
 .app{max-width:900px;margin:auto}
 
-/* 🔥 DART PUB HEADER (VARIANTE 2) */
-.header-dart{
+/* HEADER */
+.header{
   text-align:center;
   padding:12px;
   margin-bottom:12px;
-  background:linear-gradient(180deg,#0b0b0b,#000);
   border:2px solid var(--gold);
   border-radius:14px;
+  background:#000;
 }
-.header-dart .title{
-  font-size:28px;
-  font-weight:900;
-  color:var(--gold);
-}
-.header-dart .subtitle{
-  font-size:13px;
-  color:var(--muted);
-}
+.header h1{margin:0;color:var(--gold)}
+.header p{margin:4px 0 0;font-size:13px;opacity:.8}
 
-/* PLAYERS */
-.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.player{
+/* SETUP */
+.setup,.panel{
   background:#111;
-  border:2px solid #0f5d35;
-  border-radius:14px;
   padding:12px;
+  border-radius:14px;
+  margin-bottom:12px;
+}
+.setup input{
+  width:100%;
+  padding:10px;
+  margin-bottom:6px;
+  font-size:16px;
+  font-weight:700;
+  border-radius:8px;
+  border:none;
   text-align:center;
 }
-.player.active{border-color:var(--gold);box-shadow:0 0 12px rgba(212,175,55,.6)}
-.player.bust{border-color:var(--red)}
-.player input{
-  width:100%;background:#000;border:1px solid #0f5d35;
-  border-radius:8px;color:var(--text);
-  text-align:center;font-weight:800;padding:6px
-}
-.score{font-size:40px;font-weight:900}
-.avg,.legs{font-size:13px;color:var(--muted)}
 
-/* CHECKOUT */
-.checkout{
-  margin:8px 0;padding:8px;text-align:center;
-  border-radius:8px;background:#000;border:2px solid #0f5d35;
-  font-weight:800
+/* TABLE */
+table{
+  width:100%;
+  border-collapse:collapse;
+  font-size:14px;
 }
-.checkout.ok{border-color:var(--green);color:#9cffc8}
-.checkout.no{border-color:#333;color:#777}
-
-/* MODES */
-.modes{display:flex;gap:8px;margin:10px 0}
-.mode{
-  flex:1;padding:12px;border-radius:10px;
-  text-align:center;font-weight:900;cursor:pointer;
-  background:#000;border:2px solid #0f5d35
+th,td{
+  border-bottom:1px solid #333;
+  padding:6px;
+  text-align:center;
 }
-.mode.active{background:var(--green);color:#000;border-color:var(--gold)}
+th{color:var(--gold)}
 
-/* THROWS */
-.throws{display:flex;gap:8px;margin-bottom:8px}
-.throw{
-  flex:1;padding:10px;background:#000;
-  border-radius:8px;border:2px solid #0f5d35;
-  text-align:center;font-weight:800
+/* MATCH */
+.match{
+  background:#111;
+  padding:12px;
+  border-radius:14px;
+  margin-bottom:10px;
+  text-align:center;
 }
+.score{font-size:48px;font-weight:900}
 
-/* BOARD */
-.board-wrap{display:flex;justify-content:center;margin:10px 0}
-svg{width:320px;height:320px}
-.hit-area{fill:transparent;cursor:pointer}
-text{pointer-events:none} /* <<< wichtig für iOS */
-.bull25{fill:var(--green)}
-.bull50{fill:var(--red)}
+/* NUMBERS */
+.numbers{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+}
+.num{
+  padding:18px;
+  font-size:22px;
+  font-weight:900;
+  background:#000;
+  border:2px solid #0f5d35;
+  border-radius:12px;
+  color:#fff;
+}
 
 /* ACTIONS */
-.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
-.btn{
-  padding:14px;border-radius:12px;font-weight:900;
-  cursor:pointer;background:#000;border:2px solid #0f5d35;
-  text-align:center
+.actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:8px;
+  margin-top:8px;
 }
-.btn.green{background:var(--green);color:#000;border-color:var(--gold)}
-.btn.red{background:var(--red);border-color:#fff}
+.btn{
+  padding:14px;
+  font-size:16px;
+  font-weight:900;
+  border-radius:12px;
+  border:none;
+}
+.green{background:var(--green);color:#000}
+.red{background:var(--red);color:#fff}
 
 /* OVERLAY */
 .overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.9);
-  display:none;align-items:center;justify-content:center;z-index:999
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.9);
+  display:none;
+  align-items:center;
+  justify-content:center;
 }
 .overlay.show{display:flex}
-.overlay-box{
-  background:#000;border:3px solid var(--gold);
-  padding:24px;border-radius:16px;width:90%;max-width:400px;text-align:center
+.box{
+  background:#000;
+  padding:24px;
+  border-radius:16px;
+  border:3px solid var(--gold);
+  text-align:center;
 }
-
-.footer{margin-top:10px;text-align:center;font-size:12px;color:var(--muted)}
-.footer span{color:var(--gold);font-weight:700}
 </style>
 </head>
 
 <body>
 <div class="app">
 
-<!-- 🎯 HEADER -->
-<div class="header-dart">
-  <div class="title">🎯 Dart Scorer 501</div>
-  <div class="subtitle">Best of 3 · Double Out</div>
+<div class="header">
+  <h1>🎯 Dart Turnier</h1>
+  <p>6 Spieler · 2 Gruppen · Halbfinale & Finale</p>
 </div>
 
-<div class="players">
-  <div class="player active" id="p0">
-    <input id="name0" value="Spieler 1">
-    <div class="score" id="score0">501</div>
-    <div class="avg">AVG: <span id="avg0">0.0</span></div>
-    <div class="legs">Legs: <span id="legs0">0</span></div>
-  </div>
-  <div class="player" id="p1">
-    <input id="name1" value="Spieler 2">
-    <div class="score" id="score1">501</div>
-    <div class="avg">AVG: <span id="avg1">0.0</span></div>
-    <div class="legs">Legs: <span id="legs1">0</span></div>
-  </div>
+<!-- SETUP -->
+<div class="setup" id="setup">
+  <h3>Gruppe A</h3>
+  <input id="p0" placeholder="Spieler A1">
+  <input id="p1" placeholder="Spieler A2">
+  <input id="p2" placeholder="Spieler A3">
+  <h3>Gruppe B</h3>
+  <input id="p3" placeholder="Spieler B1">
+  <input id="p4" placeholder="Spieler B2">
+  <input id="p5" placeholder="Spieler B3">
+  <button class="btn green" onclick="startTournament()">Turnier starten</button>
 </div>
 
-<div class="checkout" id="checkout">Checkout: –</div>
-
-<div class="modes">
-  <div class="mode active" data-m="1">SINGLE</div>
-  <div class="mode" data-m="2">DOUBLE</div>
-  <div class="mode" data-m="3">TRIPLE</div>
+<!-- GROUP TABLE -->
+<div class="panel" id="tables" style="display:none">
+  <h3>Gruppentabellen</h3>
+  <div id="groupTables"></div>
 </div>
 
-<div class="throws" id="throws"></div>
-
-<div class="board-wrap">
-<svg viewBox="0 0 200 200">
-  <circle cx="100" cy="100" r="95" fill="#000" stroke="#0f5d35" stroke-width="6"/>
-  <circle cx="100" cy="100" r="22" class="bull25 hit-area" onclick="hitBull(25)"/>
-  <circle cx="100" cy="100" r="12" class="bull50 hit-area" onclick="hitBull(50)"/>
-  <g id="nums"></g>
-</svg>
+<!-- MATCH -->
+<div class="match" id="match" style="display:none">
+  <h2 id="matchTitle"></h2>
+  <div class="score" id="score">501</div>
 </div>
 
-<div class="actions">
-  <div class="btn" onclick="undo()">↩️ Undo</div>
-  <div class="btn green" onclick="endRound()">Runde</div>
-  <div class="btn red" onclick="bust()">Bust</div>
-</div>
+<div class="numbers" id="numbers" style="display:none"></div>
 
-<div class="footer">
-  Programmiert von <span>Yannik Strecker</span>
+<div class="actions" id="actions" style="display:none">
+  <button class="btn red" onclick="bust()">Bust</button>
+  <button class="btn green" onclick="endTurn()">Runde</button>
 </div>
 
 </div>
 
+<!-- OVERLAY -->
 <div class="overlay" id="overlay">
-  <div class="overlay-box">
-    <h2 id="winnerText"></h2>
-    <div class="btn green" onclick="newMatch()">Neues Match</div>
+  <div class="box">
+    <h2 id="overlayText"></h2>
+    <button class="btn green" onclick="nextMatch()">Weiter</button>
   </div>
 </div>
 
 <script>
-const numbers=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
-const nums=document.getElementById("nums");
-const cx=100,cy=100,r=70;
-
-numbers.forEach((n,i)=>{
-  const a=(i/numbers.length)*2*Math.PI-Math.PI/2;
-  const x=cx+r*Math.cos(a);
-  const y=cy+r*Math.sin(a);
-
-  const hit=document.createElementNS("http://www.w3.org/2000/svg","circle");
-  hit.setAttribute("cx",x);
-  hit.setAttribute("cy",y);
-  hit.setAttribute("r",18);
-  hit.setAttribute("class","hit-area");
-  hit.addEventListener("click",()=>hitNumber(n));
-  nums.appendChild(hit);
-
-  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
-  t.setAttribute("x",x);
-  t.setAttribute("y",y);
-  t.setAttribute("fill","#fff");
-  t.setAttribute("font-size","14");
-  t.setAttribute("font-weight","900");
-  t.setAttribute("text-anchor","middle");
-  t.setAttribute("dominant-baseline","middle");
-  t.textContent=n;
-  nums.appendChild(t);
+/* ----------- ZAHLEN ----------- */
+const values=[60,57,54,51,50,45,40,39,38,36,35,34,33,32,30,28,26,24,20,19,18,17,16,15,14,13,12,10,9,8,7,6,5,4,3,2,1,0];
+values.forEach(v=>{
+  const b=document.createElement("button");
+  b.className="num";
+  b.textContent=v;
+  b.addEventListener("pointerdown",()=>throwDart(v));
+  numbers.appendChild(b);
 });
 
-let scores=[501,501],legs=[0,0],cur=0,mode=1;
-let darts=[0,0],points=[0,0];
-let throws=[],turnStart=501,liveScore=501;
-let gameOver=false;
+/* ----------- TURNIERDATEN ----------- */
+let groups=[],matches=[],stage="groups",matchIndex=0;
+let scores=[501,501],legs=[0,0],current=0,turnStart=501,liveScore=501;
 
-document.querySelectorAll(".mode").forEach(m=>{
-  m.onclick=()=>{
-    document.querySelectorAll(".mode").forEach(x=>x.classList.remove("active"));
-    m.classList.add("active");
-    mode=parseInt(m.dataset.m);
-  };
-});
+function startTournament(){
+  const names=[p0,p1,p2,p3,p4,p5].map((i,n)=>i.value||`Spieler ${n+1}`);
+  groups=[
+    {name:"Gruppe A",players:names.slice(0,3),points:[0,0,0]},
+    {name:"Gruppe B",players:names.slice(3,6),points:[0,0,0]}
+  ];
 
-function hitNumber(n){
-  if(gameOver||throws.length>=3)return;
-  applyThrow(n*mode);
+  matches=[];
+  groups.forEach(g=>{
+    matches.push({group:g,p1:0,p2:1});
+    matches.push({group:g,p1:0,p2:2});
+    matches.push({group:g,p1:1,p2:2});
+  });
+
+  setup.style.display="none";
+  tables.style.display="block";
+  match.style.display="block";
+  numbers.style.display="grid";
+  actions.style.display="grid";
+
+  renderTables();
+  loadMatch();
 }
-function hitBull(v){
-  if(gameOver||throws.length>=3)return;
-  applyThrow(v);
-}
-function applyThrow(v){
-  throws.push(v);
-  darts[cur]++;points[cur]+=v;
-  liveScore-=v;
-  render();updateAvg();updateCheckout();updateLive();
-}
-function undo(){
-  if(!throws.length||gameOver)return;
-  const v=throws.pop();
-  darts[cur]--;points[cur]-=v;
-  liveScore+=v;
-  render();updateAvg();updateCheckout();updateLive();
-}
-function render(){
-  throwsEl.innerHTML="";
-  throws.forEach(v=>{
-    const d=document.createElement("div");
-    d.className="throw";
-    d.textContent=v;
-    throwsEl.appendChild(d);
+
+function renderTables(){
+  groupTables.innerHTML="";
+  groups.forEach(g=>{
+    let html=`<h4>${g.name}</h4><table><tr><th>Spieler</th><th>Punkte</th></tr>`;
+    g.players.forEach((p,i)=>{
+      html+=`<tr><td>${p}</td><td>${g.points[i]}</td></tr>`;
+    });
+    html+="</table>";
+    groupTables.innerHTML+=html;
   });
 }
-function updateLive(){
-  document.getElementById("score"+cur).textContent=liveScore;
-  document.getElementById("p"+cur).classList.toggle("bust",liveScore<0||liveScore===1);
+
+function loadMatch(){
+  scores=[501,501];legs=[0,0];current=0;
+  turnStart=501;liveScore=501;
+  const m=matches[matchIndex];
+  matchTitle.textContent=`${m.group.name}: ${m.group.players[m.p1]} vs ${m.group.players[m.p2]}`;
+  updateUI();
 }
-function endRound(){
-  if(gameOver)return;
-  if(liveScore===0 && throws.at(-1)%2===0){
-    scores[cur]=0;legs[cur]++;
-    if(legs[cur]===2){endMatch();return;}
+
+function throwDart(v){ liveScore-=v; updateUI(); }
+
+function bust(){ liveScore=turnStart; endTurn(); }
+
+function endTurn(){
+  if(liveScore===0){
+    legs[current]++;
+    if(legs[current]===2){ endMatch(); return; }
+    scores=[501,501];
   }else if(liveScore<0||liveScore===1){
-    scores[cur]=turnStart;
-  }else scores[cur]=liveScore;
-  next();
-}
-function bust(){liveScore=-1;endRound()}
-function next(){
-  throws=[];render();
-  document.getElementById("p"+cur).classList.remove("bust");
-  cur=1-cur;
-  turnStart=scores[cur];
+    scores[current]=turnStart;
+  }else scores[current]=liveScore;
+
+  current=1-current;
+  turnStart=scores[current];
   liveScore=turnStart;
-  update();updateCheckout();
+  updateUI();
 }
+
 function endMatch(){
-  gameOver=true;
-  winnerText.textContent=document.getElementById("name"+cur).value+" gewinnt!";
+  const m=matches[matchIndex];
+  const winner=current===0?m.p1:m.p2;
+  m.group.points[winner]++;
+  renderTables();
+  overlayText.textContent=`${m.group.players[winner]} gewinnt`;
   overlay.classList.add("show");
 }
-function newMatch(){
-  scores=[501,501];legs=[0,0];darts=[0,0];points=[0,0];
-  cur=0;turnStart=501;liveScore=501;gameOver=false;
+
+function nextMatch(){
   overlay.classList.remove("show");
-  update();updateAvg();updateCheckout();render();
-}
-function update(){
-  score0.textContent=scores[0];
-  score1.textContent=scores[1];
-  legs0.textContent=legs[0];
-  legs1.textContent=legs[1];
-  p0.classList.toggle("active",cur===0);
-  p1.classList.toggle("active",cur===1);
-}
-function updateAvg(){
-  avg0.textContent=(points[0]/Math.max(1,darts[0])*3).toFixed(1);
-  avg1.textContent=(points[1]/Math.max(1,darts[1])*3).toFixed(1);
-}
-function updateCheckout(){
-  const c=document.getElementById("checkout");
-  const s=liveScore;
-  if(s<=170){
-    c.textContent=`Checkout möglich bei ${s}`;
-    c.className="checkout ok";
+  matchIndex++;
+  if(matchIndex<matches.length){
+    loadMatch();
   }else{
-    c.textContent="Checkout: –";
-    c.className="checkout no";
+    buildKO();
   }
 }
-update();updateCheckout();
+
+function buildKO(){
+  groups.forEach(g=>{
+    g.rank=[0,1,2].sort((a,b)=>g.points[b]-g.points[a]);
+  });
+  matches=[
+    {ko:true,a:{g:0,i:groups[0].rank[0]},b:{g:1,i:groups[1].rank[1]}},
+    {ko:true,a:{g:1,i:groups[1].rank[0]},b:{g:0,i:groups[0].rank[1]}}
+  ];
+  stage="semi";
+  matchIndex=0;
+  loadKOMatch();
+}
+
+function loadKOMatch(){
+  scores=[501,501];legs=[0,0];current=0;
+  turnStart=501;liveScore=501;
+  const m=matches[matchIndex];
+  matchTitle.textContent=`Halbfinale: ${groups[m.a.g].players[m.a.i]} vs ${groups[m.b.g].players[m.b.i]}`;
+  updateUI();
+}
+
+function updateUI(){
+  score.textContent=liveScore;
+}
 </script>
 </body>
 </html>
