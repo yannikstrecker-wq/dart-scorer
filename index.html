@@ -26,6 +26,25 @@ body{
 }
 .app{max-width:900px;margin:auto}
 
+/* 🔥 DART PUB HEADER (VARIANTE 2) */
+.header-dart{
+  text-align:center;
+  padding:12px;
+  margin-bottom:12px;
+  background:linear-gradient(180deg,#0b0b0b,#000);
+  border:2px solid var(--gold);
+  border-radius:14px;
+}
+.header-dart .title{
+  font-size:28px;
+  font-weight:900;
+  color:var(--gold);
+}
+.header-dart .subtitle{
+  font-size:13px;
+  color:var(--muted);
+}
+
 /* PLAYERS */
 .players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .player{
@@ -73,9 +92,9 @@ body{
 
 /* BOARD */
 .board-wrap{display:flex;justify-content:center;margin:10px 0}
-svg{width:320px;height:320px;pointer-events:auto} /* <<< WICHTIG */
-.hit-area{fill:transparent;pointer-events:auto}
-text{pointer-events:none} /* <<< WICHTIG */
+svg{width:320px;height:320px}
+.hit-area{fill:transparent;cursor:pointer}
+text{pointer-events:none} /* <<< wichtig für iOS */
 .bull25{fill:var(--green)}
 .bull50{fill:var(--red)}
 
@@ -107,6 +126,12 @@ text{pointer-events:none} /* <<< WICHTIG */
 
 <body>
 <div class="app">
+
+<!-- 🎯 HEADER -->
+<div class="header-dart">
+  <div class="title">🎯 Dart Scorer 501</div>
+  <div class="subtitle">Best of 3 · Double Out</div>
+</div>
 
 <div class="players">
   <div class="player active" id="p0">
@@ -171,13 +196,13 @@ numbers.forEach((n,i)=>{
   const x=cx+r*Math.cos(a);
   const y=cy+r*Math.sin(a);
 
-  const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
-  c.setAttribute("cx",x);
-  c.setAttribute("cy",y);
-  c.setAttribute("r",18);
-  c.setAttribute("class","hit-area");
-  c.onclick=()=>hit(n);
-  nums.appendChild(c);
+  const hit=document.createElementNS("http://www.w3.org/2000/svg","circle");
+  hit.setAttribute("cx",x);
+  hit.setAttribute("cy",y);
+  hit.setAttribute("r",18);
+  hit.setAttribute("class","hit-area");
+  hit.addEventListener("click",()=>hitNumber(n));
+  nums.appendChild(hit);
 
   const t=document.createElementNS("http://www.w3.org/2000/svg","text");
   t.setAttribute("x",x);
@@ -204,27 +229,26 @@ document.querySelectorAll(".mode").forEach(m=>{
   };
 });
 
-function hit(n){
+function hitNumber(n){
   if(gameOver||throws.length>=3)return;
-  const v=n*mode;
-  throws.push(v);
-  darts[cur]++; points[cur]+=v;
-  liveScore-=v;
-  render();updateAvg();updateCheckout();updateScoreLive();
+  applyThrow(n*mode);
 }
 function hitBull(v){
   if(gameOver||throws.length>=3)return;
+  applyThrow(v);
+}
+function applyThrow(v){
   throws.push(v);
-  darts[cur]++; points[cur]+=v;
+  darts[cur]++;points[cur]+=v;
   liveScore-=v;
-  render();updateAvg();updateCheckout();updateScoreLive();
+  render();updateAvg();updateCheckout();updateLive();
 }
 function undo(){
   if(!throws.length||gameOver)return;
   const v=throws.pop();
-  darts[cur]--; points[cur]-=v;
+  darts[cur]--;points[cur]-=v;
   liveScore+=v;
-  render();updateAvg();updateCheckout();updateScoreLive();
+  render();updateAvg();updateCheckout();updateLive();
 }
 function render(){
   throwsEl.innerHTML="";
@@ -235,7 +259,7 @@ function render(){
     throwsEl.appendChild(d);
   });
 }
-function updateScoreLive(){
+function updateLive(){
   document.getElementById("score"+cur).textContent=liveScore;
   document.getElementById("p"+cur).classList.toggle("bust",liveScore<0||liveScore===1);
 }
@@ -246,9 +270,7 @@ function endRound(){
     if(legs[cur]===2){endMatch();return;}
   }else if(liveScore<0||liveScore===1){
     scores[cur]=turnStart;
-  }else{
-    scores[cur]=liveScore;
-  }
+  }else scores[cur]=liveScore;
   next();
 }
 function bust(){liveScore=-1;endRound()}
