@@ -3,208 +3,219 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<title>Dart Turnier</title>
+<title>Dart Turnier – Stabil</title>
 
 <style>
-:root{
-  --green:#1e7f4f;
-  --red:#b8322a;
-  --gold:#d4af37;
-  --text:#f5f5f5;
-}
-*{box-sizing:border-box}
 body{
   margin:0;
-  background:radial-gradient(circle at top,#1b5e3a 0%,#050806 70%);
   font-family:system-ui;
-  color:var(--text);
-  padding:10px;
+  background:#0c1f15;
+  color:#fff;
+  padding:12px;
 }
-.app{max-width:1200px;margin:auto}
-.panel{background:#111;padding:12px;border-radius:14px;margin-bottom:12px}
-.header{text-align:center;border:2px solid var(--gold);border-radius:14px;padding:12px;background:#000}
-
-table{width:100%;border-collapse:collapse}
-th,td{border-bottom:1px solid #333;padding:6px;text-align:center}
-th{color:var(--gold)}
-
-.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.playerBox{background:#000;border:2px solid #0f5d35;border-radius:12px;padding:10px}
-.playerBox.active{border-color:var(--gold)}
-.score{font-size:42px;font-weight:900}
-
-.throws{text-align:center;font-weight:800;color:#9cffc8}
-.checkout{text-align:center;font-weight:800;color:#ffd700}
-
-.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.mode{padding:10px;font-weight:900;border-radius:10px;border:2px solid #0f5d35;background:#000;color:#eee}
-.mode.single.active{background:#333}
-.mode.double.active{background:var(--green);color:#000}
-.mode.triple.active{background:var(--red);color:#fff}
-
-.numbers{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.num{padding:14px;font-size:18px;font-weight:900;background:#000;color:#fff;border:2px solid #0f5d35;border-radius:10px}
-.bull{color:#ffd700}
-
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.btn{padding:14px;font-weight:900;border-radius:12px;border:none}
-.green{background:var(--green);color:#000}
-.red{background:var(--red);color:#fff}
-
-.statBtn,.calBtn{
-  position:fixed;bottom:14px;
-  background:var(--gold);color:#000;
-  font-weight:900;border-radius:50%;border:none;
-  padding:12px 14px;font-size:18px
+h1{text-align:center}
+.panel{
+  background:#111;
+  padding:12px;
+  border-radius:12px;
+  margin-bottom:12px;
 }
-.statBtn{right:14px}
-.calBtn{left:14px}
+button{
+  padding:12px;
+  font-weight:bold;
+  margin:4px;
+}
+input{padding:8px;width:100%;margin-bottom:6px}
 
-.koMatch.live{color:var(--gold);font-weight:900}
-.koMatch.done{color:#9cffc8}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.active{border:2px solid gold}
+.score{font-size:32px}
 
 .overlay{
-  position:fixed;inset:0;background:rgba(0,0,0,.9);
-  display:none;align-items:center;justify-content:center;z-index:999
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.85);
+  display:none;align-items:center;justify-content:center;
 }
 .overlay.show{display:flex}
 .box{
-  background:#000;border:3px solid var(--gold);
-  border-radius:16px;padding:24px;
-  width:90%;max-width:520px;text-align:center
+  background:#000;padding:20px;border-radius:12px;
+  width:90%;max-width:400px;
 }
-.matchRow{display:flex;justify-content:space-between;padding:6px;border-bottom:1px solid #333}
 </style>
 </head>
 
 <body>
-<div class="app">
 
-<div class="header">
-  <h1>🎯 Dart Turnier</h1>
-</div>
+<h1>🎯 Dart Turnier</h1>
 
+<!-- SETUP -->
 <div class="panel" id="setup">
-  <h3>Spielernamen</h3>
+  <h3>Spieler eingeben</h3>
   <input id="p0" placeholder="Spieler A1">
   <input id="p1" placeholder="Spieler A2">
   <input id="p2" placeholder="Spieler A3">
   <input id="p3" placeholder="Spieler B1">
   <input id="p4" placeholder="Spieler B2">
   <input id="p5" placeholder="Spieler B3">
-  <button class="btn green" onclick="start()">Turnier starten</button>
+  <button onclick="startTournament()">Turnier starten</button>
 </div>
 
-<div id="game" style="display:none">
+<!-- GAME -->
+<div class="panel" id="game" style="display:none">
+  <h3 id="matchTitle"></h3>
 
-<div class="panel"><h3>Gruppentabellen</h3><div id="tables"></div></div>
-<div class="panel"><h3>Turnierbaum (KO)</h3><div id="koTree"></div></div>
-
-<div class="panel">
-  <h2 id="matchTitle"></h2>
-  <div class="scores">
-    <div class="playerBox active" id="box0">
+  <div class="players">
+    <div id="pBox0">
       <div id="n0"></div>
       <div class="score" id="s0">501</div>
-      Legs <span id="l0">0</span>
+      Legs: <span id="l0">0</span>
     </div>
-    <div class="playerBox" id="box1">
+    <div id="pBox1">
       <div id="n1"></div>
       <div class="score" id="s1">501</div>
-      Legs <span id="l1">0</span>
+      Legs: <span id="l1">0</span>
     </div>
   </div>
-  <div class="throws" id="throws">Aufnahme: –</div>
-  <div class="checkout" id="checkout">Checkout: –</div>
+
+  <p id="throws">Aufnahme: –</p>
+  <p id="checkout">Checkout: –</p>
+
+  <button onclick="throwDart(60)">T20</button>
+  <button onclick="throwDart(20)">20</button>
+  <button onclick="throwDart(5)">5</button>
+  <button onclick="nextTurn()">Weiter</button>
 </div>
 
-<div class="panel">
-  <div class="modes">
-    <button class="mode single active" onclick="setMode(1)">S</button>
-    <button class="mode double" onclick="setMode(2)">D</button>
-    <button class="mode triple" onclick="setMode(3)">T</button>
+<button onclick="openStats()">📊 Statistik</button>
+<button onclick="openCalendar()">📅 Kalender</button>
+
+<!-- STATS -->
+<div class="overlay" id="stats">
+  <div class="box">
+    <h3>Statistik</h3>
+    <div id="statsContent"></div>
+    <button onclick="closeStats()">OK</button>
   </div>
-  <div class="numbers" id="nums"></div>
-  <div class="actions">
-    <button class="btn red" onclick="undo()">Undo</button>
-    <button class="btn green" onclick="next()">Weiter</button>
+</div>
+
+<!-- CALENDAR -->
+<div class="overlay" id="calendar">
+  <div class="box">
+    <h3>Spielplan</h3>
+    <div id="calendarContent"></div>
+    <button onclick="closeCalendar()">OK</button>
   </div>
 </div>
-
-</div>
-
-<button class="statBtn" onclick="openStats()">📊</button>
-<button class="calBtn" onclick="openCalendar()">📅</button>
 
 <script>
-/* ================= STATE ================= */
-let players=[],stats=[],groups=[],matches=[],koMatches=[];
-let stage="groups",matchIndex=0,current=0,mode=1,throwsCount=0;
-let score=[501,501],legs=[0,0],darts=[];
+/* ===== STATE ===== */
+let players=[];
+let matches=[];
+let matchIndex=0;
+let current=0;
+let score=[501,501];
+let legs=[0,0];
+let darts=[];
+let stats=[];
 
-/* ================= VOLLSTÄNDIGE CHECKOUTS 170–2 ================= */
-const checkoutMap = {
-170:"T20 T20 Bull",169:"–",168:"–",167:"T20 T19 Bull",
-166:"–",165:"–",164:"T20 T18 Bull",163:"–",
-162:"–",161:"T20 T17 Bull",160:"T20 T20 D20",
-159:"–",158:"T20 T20 D19",157:"–",156:"T20 T20 D18",
-155:"T20 T19 D19",154:"T20 T18 D20",153:"T20 T19 D18",
-152:"T20 T20 D16",151:"T20 T17 D20",150:"T20 T18 D18",
-149:"T20 T19 D16",148:"T20 T20 D14",147:"T20 T17 D18",
-146:"T20 T18 D16",145:"T20 T19 D14",144:"T20 T20 D12",
-143:"T20 T17 D16",142:"T20 T18 D14",141:"T20 T19 D12",
-140:"T20 T20 D10",139:"T20 T19 D11",138:"T20 T18 D12",
-137:"T20 T19 D10",136:"T20 T20 D8",135:"T20 T17 D12",
-134:"T20 T18 D10",133:"T20 T19 D8",132:"T20 T20 D6",
-131:"T20 T17 D10",130:"T20 T20 D5",129:"T19 T20 D6",
-128:"T18 T20 D7",127:"T20 T17 D8",126:"T19 T19 D6",
-125:"Bull T20 D8",124:"T20 T16 D8",123:"T19 T16 D9",
-122:"T18 T20 D4",121:"T20 T11 D14",120:"T20 20 D20",
-119:"T19 T12 D13",118:"T20 18 D20",117:"T20 17 D20",
-116:"T20 16 D20",115:"T20 15 D20",114:"T20 14 D20",
-113:"T20 13 D20",112:"T20 12 D20",111:"T20 11 D20",
-110:"T20 10 D20",109:"T20 9 D20",108:"T20 8 D20",
-107:"T20 7 D20",106:"T20 6 D20",105:"T20 5 D20",
-104:"T20 4 D20",103:"T20 3 D20",102:"T20 2 D20",
-101:"T20 1 D20",100:"T20 D20",99:"T19 10 D16",
-98:"T20 D19",97:"T19 D20",96:"T20 D18",
-95:"T19 D19",94:"T18 D20",93:"T19 D18",
-92:"T20 D16",91:"T17 D20",90:"T18 D18",
-89:"T19 D16",88:"T16 D20",87:"T17 D18",
-86:"T18 D16",85:"T15 D20",84:"T20 D12",
-83:"T17 D16",82:"T14 D20",81:"T19 D12",
-80:"T20 D10",79:"T13 D20",78:"T18 D12",
-77:"T19 D10",76:"T20 D8",75:"T17 D12",
-74:"T14 D16",73:"T19 D8",72:"T16 D12",
-71:"T13 D16",70:"T18 D8",69:"T19 D6",
-68:"T20 D4",67:"T17 D8",66:"T10 D18",
-65:"T19 D4",64:"T16 D8",63:"T13 D12",
-62:"T10 D16",61:"T15 D8",60:"20 D20",
-59:"19 D20",58:"18 D20",57:"17 D20",
-56:"16 D20",55:"15 D20",54:"14 D20",
-53:"13 D20",52:"12 D20",51:"11 D20",
-50:"Bull",49:"17 D16",48:"16 D16",47:"15 D16",
-46:"14 D16",45:"13 D16",44:"12 D16",
-43:"11 D16",42:"10 D16",41:"9 D16",
-40:"D20",39:"7 D16",38:"D19",37:"5 D16",
-36:"D18",35:"3 D16",34:"D17",33:"1 D16",
-32:"D16",31:"15 D8",30:"D15",29:"13 D8",
-28:"D14",27:"11 D8",26:"D13",25:"9 D8",
-24:"D12",23:"7 D8",22:"D11",21:"5 D8",
-20:"D10",19:"3 D8",18:"D9",17:"1 D8",
-16:"D8",15:"7 D4",14:"D7",13:"5 D4",
-12:"D6",11:"3 D4",10:"D5",9:"1 D4",
-8:"D4",7:"3 D2",6:"D3",5:"1 D2",
-4:"D2",3:"1 D1",2:"D1"
+/* ===== CHECKOUT ===== */
+const checkoutMap={
+170:"T20 T20 Bull",167:"T20 T19 Bull",164:"T20 T18 Bull",
+161:"T20 T17 Bull",160:"T20 T20 D20",100:"T20 D20",
+80:"T20 D10",60:"20 D20",50:"Bull",40:"D20",
+32:"D16",24:"D12",16:"D8",8:"D4",4:"D2",2:"D1"
 };
 
-/* ===== Restliche Spiellogik unverändert ===== */
-function update(){
-  checkout.textContent = checkoutMap[score[current]]
-    ? "Checkout: "+checkoutMap[score[current]]
-    : "Checkout: –";
+/* ===== START ===== */
+function startTournament(){
+  players=[];
+  stats=[];
+  for(let i=0;i<6;i++){
+    const v=document.getElementById("p"+i).value||"Spieler "+(i+1);
+    players.push(v);
+    stats.push({throws:0,points:0});
+  }
+
+  matches=[
+    {a:0,b:1},{a:3,b:4},
+    {a:0,b:2},{a:3,b:5},
+    {a:1,b:2},{a:4,b:5}
+  ];
+
+  document.getElementById("setup").style.display="none";
+  document.getElementById("game").style.display="block";
+  loadMatch();
 }
+
+/* ===== GAME ===== */
+function loadMatch(){
+  score=[501,501];
+  legs=[0,0];
+  darts=[];
+  current=0;
+
+  const m=matches[matchIndex];
+  n0.textContent=players[m.a];
+  n1.textContent=players[m.b];
+  matchTitle.textContent=players[m.a]+" vs "+players[m.b];
+  updateUI();
+}
+
+function throwDart(v){
+  if(darts.length>=3)return;
+  score[current]-=v;
+  darts.push(v);
+  stats[current].throws++;
+  stats[current].points+=v;
+  updateUI();
+}
+
+function nextTurn(){
+  const last=darts[darts.length-1];
+  if(score[current]===0 && last%2===0){
+    legs[current]++;
+    if(legs[current]===2){
+      alert(players[current]+" gewinnt das Match");
+      matchIndex++;
+      if(matchIndex<matches.length) loadMatch();
+      return;
+    }
+    score=[501,501];
+  }
+  if(score[current]<0||score[current]===1){
+    score[current]+=darts.reduce((a,b)=>a+b,0);
+  }
+  darts=[];
+  current=1-current;
+  updateUI();
+}
+
+function updateUI(){
+  s0.textContent=score[0];
+  s1.textContent=score[1];
+  l0.textContent=legs[0];
+  l1.textContent=legs[1];
+  throws.textContent=darts.length?"Aufnahme: "+darts.join(" | "):"Aufnahme: –";
+  checkout.textContent=checkoutMap[score[current]]?
+    "Checkout: "+checkoutMap[score[current]]:"Checkout: –";
+}
+
+/* ===== STATS ===== */
+function openStats(){
+  statsContent.innerHTML=players.map((p,i)=>
+    `${p}: Ø ${stats[i].throws?((stats[i].points/stats[i].throws)*3).toFixed(1):"0.0"}`
+  ).join("<br>");
+  stats.classList.add("show");
+}
+function closeStats(){stats.classList.remove("show")}
+
+/* ===== CALENDAR ===== */
+function openCalendar(){
+  calendarContent.innerHTML=matches.map(m=>players[m.a]+" vs "+players[m.b]).join("<br>");
+  calendar.classList.add("show");
+}
+function closeCalendar(){calendar.classList.remove("show")}
 </script>
+
 </body>
 </html>
