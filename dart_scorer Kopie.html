@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1e7f4f">
+<title>Dart Scorer 501</title>
+
+<style>
+:root{
+  --green:#1e7f4f;
+  --red:#b8322a;
+  --gold:#d4af37;
+  --bg:#050806;
+  --text:#f5f5f5;
+  --muted:#9aa4a1;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#1b5e3a 0%,#050806 70%);
+  font-family:system-ui, -apple-system, Segoe UI, Roboto;
+  color:var(--text);
+  padding:10px;
+}
+
+.app{max-width:900px;margin:auto}
+
+/* HEADER */
+.header{text-align:center;margin-bottom:8px}
+.header h1{margin:4px 0}
+
+/* PLAYERS */
+.players{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+}
+.player{
+  background:#111;
+  border:2px solid #0f5d35;
+  border-radius:14px;
+  padding:12px;
+  text-align:center;
+}
+.player.active{
+  border-color:var(--gold);
+  box-shadow:0 0 12px rgba(212,175,55,.6);
+}
+.player input{
+  width:100%;
+  background:#000;
+  border:1px solid #0f5d35;
+  border-radius:8px;
+  color:var(--text);
+  text-align:center;
+  font-weight:800;
+  padding:6px;
+}
+.score{font-size:40px;font-weight:900}
+.avg,.legs{font-size:13px;color:var(--muted)}
+
+/* MULTIPLIER */
+.modes{
+  display:flex;
+  gap:8px;
+  margin:12px 0;
+}
+.mode{
+  flex:1;
+  padding:12px;
+  border-radius:10px;
+  text-align:center;
+  font-weight:900;
+  cursor:pointer;
+  background:#000;
+  border:2px solid #0f5d35;
+}
+.mode.active{
+  background:var(--green);
+  color:#000;
+  border-color:var(--gold);
+}
+
+/* THROWS */
+.throws{
+  display:flex;
+  gap:8px;
+  margin-bottom:10px;
+}
+.throw{
+  flex:1;
+  padding:10px;
+  background:#000;
+  border-radius:8px;
+  border:2px solid #0f5d35;
+  text-align:center;
+  font-weight:800;
+}
+
+/* BOARD */
+.board-wrap{
+  display:flex;
+  justify-content:center;
+  margin:14px 0;
+  position:relative;
+  z-index:1;
+}
+svg{
+  width:320px;
+  height:320px;
+  pointer-events:none; /* <<< WICHTIG */
+}
+
+/* TOUCH AREAS */
+.hit-area{
+  fill:transparent;
+  pointer-events:auto; /* <<< WICHTIG */
+  cursor:pointer;
+}
+
+/* BULL */
+.bull25{fill:var(--green);pointer-events:auto}
+.bull50{fill:var(--red);pointer-events:auto}
+
+/* ACTIONS */
+.actions{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  position:relative;
+  z-index:2; /* <<< ÜBER SVG */
+}
+.btn{
+  padding:14px;
+  border-radius:12px;
+  font-weight:900;
+  cursor:pointer;
+  background:#000;
+  border:2px solid #0f5d35;
+  text-align:center;
+}
+.btn.green{background:var(--green);color:#000;border-color:var(--gold)}
+.btn.red{background:var(--red);border-color:#fff}
+
+/* FOOTER */
+.footer{
+  margin-top:12px;
+  text-align:center;
+  font-size:12px;
+  color:var(--muted);
+}
+.footer span{color:var(--gold);font-weight:700}
+</style>
+</head>
+
+<body>
+<div class="app">
+
+<div class="header">
+  <h1>🎯 Dart Scorer 501</h1>
+</div>
+
+<div class="players">
+  <div class="player active" id="p0">
+    <input value="Spieler 1">
+    <div class="score" id="score0">501</div>
+    <div class="avg">AVG: <span id="avg0">0.0</span></div>
+    <div class="legs">Legs: <span id="legs0">0</span></div>
+  </div>
+  <div class="player" id="p1">
+    <input value="Spieler 2">
+    <div class="score" id="score1">501</div>
+    <div class="avg">AVG: <span id="avg1">0.0</span></div>
+    <div class="legs">Legs: <span id="legs1">0</span></div>
+  </div>
+</div>
+
+<div class="modes">
+  <div class="mode active" data-m="1">SINGLE</div>
+  <div class="mode" data-m="2">DOUBLE</div>
+  <div class="mode" data-m="3">TRIPLE</div>
+</div>
+
+<div class="throws" id="throws"></div>
+
+<div class="board-wrap">
+<svg viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="95" fill="#000" stroke="#0f5d35" stroke-width="6"/>
+
+  <!-- BULL -->
+  <circle cx="100" cy="100" r="22" class="bull25" onclick="hitBull(25)"/>
+  <circle cx="100" cy="100" r="12" class="bull50" onclick="hitBull(50)"/>
+
+  <!-- NUMBERS -->
+  <g id="nums"></g>
+</svg>
+</div>
+
+<div class="actions">
+  <div class="btn green" onclick="endRound()">Runde abschließen</div>
+  <div class="btn red" onclick="bust()">Bust</div>
+</div>
+
+<div class="footer">
+  Programmiert von <span>Yannik Strecker</span>
+</div>
+
+</div>
+
+<script>
+const numbers=[20,1,18,4,13,6,10,15,2,17,3,19,7,16,8,11,14,9,12,5];
+const nums=document.getElementById("nums");
+
+const cx=100,cy=100,r=70;
+numbers.forEach((n,i)=>{
+  const a=(i/numbers.length)*2*Math.PI-Math.PI/2;
+  const x=cx+r*Math.cos(a);
+  const y=cy+r*Math.sin(a);
+
+  const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
+  c.setAttribute("cx",x);
+  c.setAttribute("cy",y);
+  c.setAttribute("r",18);
+  c.setAttribute("class","hit-area");
+  c.onclick=()=>hit(n);
+  nums.appendChild(c);
+
+  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+  t.setAttribute("x",x);
+  t.setAttribute("y",y);
+  t.setAttribute("fill","#fff");
+  t.setAttribute("font-size","14");
+  t.setAttribute("font-weight","900");
+  t.setAttribute("text-anchor","middle");
+  t.setAttribute("dominant-baseline","middle");
+  t.textContent=n;
+  nums.appendChild(t);
+});
+
+let scores=[501,501],legs=[0,0],cur=0,mode=1;
+let throws=[],start=501,darts=[0,0],points=[0,0];
+
+document.querySelectorAll(".mode").forEach(m=>{
+  m.onclick=()=>{
+    document.querySelectorAll(".mode").forEach(x=>x.classList.remove("active"));
+    m.classList.add("active");
+    mode=parseInt(m.dataset.m);
+  };
+});
+
+function hit(n){
+  if(throws.length>=3)return;
+  const v=n*mode;
+  throws.push(v);
+  darts[cur]++; points[cur]+=v;
+  renderThrows(); updateAvg();
+}
+function hitBull(v){
+  if(throws.length>=3)return;
+  throws.push(v);
+  darts[cur]++; points[cur]+=v;
+  renderThrows(); updateAvg();
+}
+
+function renderThrows(){
+  const el=document.getElementById("throws");
+  el.innerHTML="";
+  throws.forEach(v=>{
+    const d=document.createElement("div");
+    d.className="throw";
+    d.textContent=v;
+    el.appendChild(d);
+  });
+}
+
+function endRound(){
+  const sum=throws.reduce((a,b)=>a+b,0);
+  const rest=scores[cur]-sum;
+  if(rest<0||rest===1)scores[cur]=start;
+  else if(rest===0 && throws.at(-1)%2===0){scores[cur]=0;legs[cur]++}
+  else scores[cur]=rest;
+  next();
+}
+function bust(){scores[cur]=start;next()}
+
+function next(){
+  throws=[]; renderThrows();
+  cur=1-cur; start=scores[cur];
+  update();
+}
+function update(){
+  score0.textContent=scores[0];
+  score1.textContent=scores[1];
+  legs0.textContent=legs[0];
+  legs1.textContent=legs[1];
+  p0.classList.toggle("active",cur===0);
+  p1.classList.toggle("active",cur===1);
+}
+function updateAvg(){
+  avg0.textContent=(points[0]/Math.max(1,darts[0])*3).toFixed(1);
+  avg1.textContent=(points[1]/Math.max(1,darts[1])*3).toFixed(1);
+}
+update();
+</script>
+</body>
+</html>
