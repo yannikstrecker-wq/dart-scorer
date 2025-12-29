@@ -26,15 +26,8 @@ body{
 }
 .app{max-width:900px;margin:auto}
 
-/* HEADER */
-.header{text-align:center;margin-bottom:6px}
-
 /* PLAYERS */
-.players{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:10px;
-}
+.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .player{
   background:#111;
   border:2px solid #0f5d35;
@@ -42,32 +35,21 @@ body{
   padding:12px;
   text-align:center;
 }
-.player.active{
-  border-color:var(--gold);
-  box-shadow:0 0 12px rgba(212,175,55,.6);
-}
+.player.active{border-color:var(--gold);box-shadow:0 0 12px rgba(212,175,55,.6)}
+.player.bust{border-color:var(--red)}
 .player input{
-  width:100%;
-  background:#000;
-  border:1px solid #0f5d35;
-  border-radius:8px;
-  color:var(--text);
-  text-align:center;
-  font-weight:800;
-  padding:6px;
+  width:100%;background:#000;border:1px solid #0f5d35;
+  border-radius:8px;color:var(--text);
+  text-align:center;font-weight:800;padding:6px
 }
 .score{font-size:40px;font-weight:900}
 .avg,.legs{font-size:13px;color:var(--muted)}
 
-/* CHECKOUT HINT */
+/* CHECKOUT */
 .checkout{
-  margin:8px 0;
-  padding:8px;
-  text-align:center;
-  border-radius:8px;
-  background:#000;
-  border:2px solid #0f5d35;
-  font-weight:800;
+  margin:8px 0;padding:8px;text-align:center;
+  border-radius:8px;background:#000;border:2px solid #0f5d35;
+  font-weight:800
 }
 .checkout.ok{border-color:var(--green);color:#9cffc8}
 .checkout.no{border-color:#333;color:#777}
@@ -75,31 +57,18 @@ body{
 /* MODES */
 .modes{display:flex;gap:8px;margin:10px 0}
 .mode{
-  flex:1;
-  padding:12px;
-  border-radius:10px;
-  text-align:center;
-  font-weight:900;
-  cursor:pointer;
-  background:#000;
-  border:2px solid #0f5d35;
+  flex:1;padding:12px;border-radius:10px;
+  text-align:center;font-weight:900;cursor:pointer;
+  background:#000;border:2px solid #0f5d35
 }
-.mode.active{
-  background:var(--green);
-  color:#000;
-  border-color:var(--gold);
-}
+.mode.active{background:var(--green);color:#000;border-color:var(--gold)}
 
 /* THROWS */
 .throws{display:flex;gap:8px;margin-bottom:8px}
 .throw{
-  flex:1;
-  padding:10px;
-  background:#000;
-  border-radius:8px;
-  border:2px solid #0f5d35;
-  text-align:center;
-  font-weight:800;
+  flex:1;padding:10px;background:#000;
+  border-radius:8px;border:2px solid #0f5d35;
+  text-align:center;font-weight:800
 }
 
 /* BOARD */
@@ -110,48 +79,27 @@ svg{width:320px;height:320px;pointer-events:none}
 .bull50{fill:var(--red);pointer-events:auto}
 
 /* ACTIONS */
-.actions{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:8px;
-}
+.actions{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px}
 .btn{
-  padding:14px;
-  border-radius:12px;
-  font-weight:900;
-  cursor:pointer;
-  background:#000;
-  border:2px solid #0f5d35;
-  text-align:center;
+  padding:14px;border-radius:12px;font-weight:900;
+  cursor:pointer;background:#000;border:2px solid #0f5d35;
+  text-align:center
 }
 .btn.green{background:var(--green);color:#000;border-color:var(--gold)}
 .btn.red{background:var(--red);border-color:#fff}
 
 /* OVERLAY */
 .overlay{
-  position:fixed;inset:0;
-  background:rgba(0,0,0,.85);
-  display:none;
-  align-items:center;
-  justify-content:center;
-  z-index:999;
+  position:fixed;inset:0;background:rgba(0,0,0,.9);
+  display:none;align-items:center;justify-content:center;z-index:999
 }
 .overlay.show{display:flex}
 .overlay-box{
-  background:#000;
-  border:3px solid var(--gold);
-  padding:30px;
-  border-radius:16px;
-  text-align:center;
+  background:#000;border:3px solid var(--gold);
+  padding:24px;border-radius:16px;width:90%;max-width:400px;text-align:center
 }
-.overlay-box h2{margin:0;color:var(--gold)}
 
-.footer{
-  margin-top:10px;
-  text-align:center;
-  font-size:12px;
-  color:var(--muted);
-}
+.footer{margin-top:10px;text-align:center;font-size:12px;color:var(--muted)}
 .footer span{color:var(--gold);font-weight:700}
 </style>
 </head>
@@ -159,17 +107,15 @@ svg{width:320px;height:320px;pointer-events:none}
 <body>
 <div class="app">
 
-<div class="header"><h2>🎯 Dart Scorer 501</h2></div>
-
 <div class="players">
   <div class="player active" id="p0">
-    <input value="Spieler 1">
+    <input id="name0" value="Spieler 1">
     <div class="score" id="score0">501</div>
     <div class="avg">AVG: <span id="avg0">0.0</span></div>
     <div class="legs">Legs: <span id="legs0">0</span></div>
   </div>
   <div class="player" id="p1">
-    <input value="Spieler 2">
+    <input id="name1" value="Spieler 2">
     <div class="score" id="score1">501</div>
     <div class="avg">AVG: <span id="avg1">0.0</span></div>
     <div class="legs">Legs: <span id="legs1">0</span></div>
@@ -209,8 +155,7 @@ svg{width:320px;height:320px;pointer-events:none}
 
 <div class="overlay" id="overlay">
   <div class="overlay-box">
-    <h2 id="overlayText"></h2>
-    <br>
+    <h2 id="winnerText"></h2>
     <div class="btn green" onclick="newMatch()">Neues Match</div>
   </div>
 </div>
@@ -224,16 +169,27 @@ numbers.forEach((n,i)=>{
   const a=(i/numbers.length)*2*Math.PI-Math.PI/2;
   const x=cx+r*Math.cos(a);
   const y=cy+r*Math.sin(a);
+
   const c=document.createElementNS("http://www.w3.org/2000/svg","circle");
   c.setAttribute("cx",x);c.setAttribute("cy",y);
   c.setAttribute("r",18);c.setAttribute("class","hit-area");
   c.onclick=()=>hit(n);
   nums.appendChild(c);
+
+  const t=document.createElementNS("http://www.w3.org/2000/svg","text");
+  t.setAttribute("x",x);t.setAttribute("y",y);
+  t.setAttribute("fill","#fff");t.setAttribute("font-size","14");
+  t.setAttribute("font-weight","900");
+  t.setAttribute("text-anchor","middle");
+  t.setAttribute("dominant-baseline","middle");
+  t.style.pointerEvents="none";
+  t.textContent=n;
+  nums.appendChild(t);
 });
 
 let scores=[501,501],legs=[0,0],cur=0,mode=1;
-let throws=[],turnStart=501;
 let darts=[0,0],points=[0,0];
+let throws=[],turnStart=501,liveScore=501;
 let gameOver=false;
 
 document.querySelectorAll(".mode").forEach(m=>{
@@ -247,66 +203,67 @@ document.querySelectorAll(".mode").forEach(m=>{
 function hit(n){
   if(gameOver||throws.length>=3)return;
   const v=n*mode;
-  throws.push({v});
+  throws.push(v);
   darts[cur]++; points[cur]+=v;
-  render(); updateAvg(); updateCheckout();
+  liveScore-=v;
+  render();updateAvg();updateCheckout();updateScoreLive();
 }
 function hitBull(v){
   if(gameOver||throws.length>=3)return;
-  throws.push({v});
+  throws.push(v);
   darts[cur]++; points[cur]+=v;
-  render(); updateAvg(); updateCheckout();
+  liveScore-=v;
+  render();updateAvg();updateCheckout();updateScoreLive();
 }
 function undo(){
   if(!throws.length||gameOver)return;
-  const last=throws.pop();
-  darts[cur]--; points[cur]-=last.v;
-  render(); updateAvg(); updateCheckout();
+  const v=throws.pop();
+  darts[cur]--; points[cur]-=v;
+  liveScore+=v;
+  render();updateAvg();updateCheckout();updateScoreLive();
 }
 function render(){
   throwsEl.innerHTML="";
-  throws.forEach(t=>{
+  throws.forEach(v=>{
     const d=document.createElement("div");
     d.className="throw";
-    d.textContent=t.v;
+    d.textContent=v;
     throwsEl.appendChild(d);
   });
 }
+function updateScoreLive(){
+  document.getElementById("score"+cur).textContent=liveScore;
+  document.getElementById("p"+cur).classList.toggle("bust",liveScore<0||liveScore===1);
+}
 function endRound(){
   if(gameOver)return;
-  const sum=throws.reduce((a,b)=>a+b.v,0);
-  const rest=scores[cur]-sum;
-
-  if(rest===0 && throws.at(-1).v%2===0){
-    scores[cur]=0;
-    legs[cur]++;
-    if(legs[cur]===2){
-      endMatch();
-      return;
-    }
-  }else if(rest<0||rest===1){
+  if(liveScore===0 && throws.at(-1)%2===0){
+    scores[cur]=0;legs[cur]++;
+    if(legs[cur]===2){endMatch();return;}
+  }else if(liveScore<0||liveScore===1){
     scores[cur]=turnStart;
   }else{
-    scores[cur]=rest;
+    scores[cur]=liveScore;
   }
   next();
 }
-function bust(){scores[cur]=turnStart;next()}
+function bust(){liveScore=-1;endRound()}
 function next(){
   throws=[];render();
+  document.getElementById("p"+cur).classList.remove("bust");
   cur=1-cur;
   turnStart=scores[cur];
+  liveScore=turnStart;
   update();updateCheckout();
 }
 function endMatch(){
   gameOver=true;
-  document.getElementById("overlayText").textContent=
-    `${document.querySelectorAll("input")[cur].value} gewinnt das Match!`;
+  winnerText.textContent=document.getElementById("name"+cur).value+" gewinnt!";
   overlay.classList.add("show");
 }
 function newMatch(){
   scores=[501,501];legs=[0,0];darts=[0,0];points=[0,0];
-  cur=0;turnStart=501;gameOver=false;
+  cur=0;turnStart=501;liveScore=501;gameOver=false;
   overlay.classList.remove("show");
   update();updateAvg();updateCheckout();render();
 }
@@ -324,7 +281,7 @@ function updateAvg(){
 }
 function updateCheckout(){
   const c=document.getElementById("checkout");
-  const s=scores[cur];
+  const s=liveScore;
   if(s<=170){
     c.textContent=`Checkout möglich bei ${s}`;
     c.className="checkout ok";
