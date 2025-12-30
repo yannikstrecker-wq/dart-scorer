@@ -4,66 +4,194 @@
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>Dart Web App</title>
+
 <style>
-:root{--green:#1e7f4f;--red:#b8322a;--gold:#d4af37;--bg:#050806;--panel:#111;--text:#f5f5f5}
+:root{
+  --green:#1e7f4f;
+  --red:#b8322a;
+  --gold:#d4af37;
+  --bg:#050806;
+  --panel:#111;
+  --text:#f5f5f5;
+}
 *{box-sizing:border-box}
-body{margin:0;background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%);font-family:system-ui;color:var(--text);padding:8px}
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%);
+  font-family:system-ui;
+  color:var(--text);
+  padding:8px;
+}
 .app{max-width:1200px;margin:auto}
-.header{display:flex;align-items:center;justify-content:space-between;border:2px solid var(--gold);border-radius:14px;padding:8px;background:#000;margin-bottom:8px}
+
+/* HEADER */
+.header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  border:2px solid var(--gold);
+  border-radius:14px;
+  padding:8px;
+  background:#000;
+  margin-bottom:8px
+}
 .header .status{color:var(--gold);font-weight:900}
-.header button{background:#000;color:var(--gold);border:2px solid var(--gold);border-radius:10px;padding:6px 10px;font-weight:900}
+.header button{
+  background:#000;
+  color:var(--gold);
+  border:2px solid var(--gold);
+  border-radius:10px;
+  padding:6px 10px;
+  font-weight:900
+}
+
+/* PANELS */
 .panel{background:var(--panel);padding:10px;border-radius:14px;margin-bottom:8px}
 .hidden{display:none}
+
+/* BUTTONS */
 .modes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.mode{padding:10px;font-weight:900;border-radius:10px;border:2px solid #0f5d35;background:#000;color:#eee}
+.mode{
+  padding:10px;
+  font-weight:900;
+  border-radius:10px;
+  border:2px solid #0f5d35;
+  background:#000;
+  color:#eee
+}
 .mode.active{background:var(--gold);color:#000}
+
+/* INPUT */
 .numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.num{padding:14px;font-size:18px;font-weight:900;background:#000;color:#fff;border:2px solid #0f5d35;border-radius:10px}
+.num{
+  padding:14px;
+  font-size:18px;
+  font-weight:900;
+  background:#000;
+  color:#fff;
+  border:2px solid #0f5d35;
+  border-radius:10px
+}
 .bull{color:#ffd700}
 .quickInput{display:flex;gap:6px;margin-top:6px}
-.quickInput input{flex:1;padding:10px;border-radius:8px;border:2px solid #333;background:#000;color:#fff;text-align:center;font-weight:900}
-.quickInput button{padding:10px 14px;border-radius:8px;border:none;font-weight:900;background:var(--gold)}
+.quickInput input{
+  flex:1;
+  padding:10px;
+  border-radius:8px;
+  border:2px solid #333;
+  background:#000;
+  color:#fff;
+  text-align:center;
+  font-weight:900
+}
+.quickInput button{
+  padding:10px 14px;
+  border-radius:8px;
+  border:none;
+  font-weight:900;
+  background:var(--gold)
+}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .btn{padding:14px;font-weight:900;border-radius:12px;border:none}
 .green{background:var(--green);color:#000}
 .red{background:var(--red);color:#fff}
+
+/* 501 */
 .scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.playerBox{background:#000;border:2px solid #0f5d35;border-radius:12px;padding:10px}
+.playerBox{
+  background:#000;
+  border:2px solid #0f5d35;
+  border-radius:12px;
+  padding:10px
+}
 .playerBox.active{border-color:var(--gold)}
 .score{font-size:42px;font-weight:900}
 .sub{font-weight:800;opacity:.9}
 .checkout{color:#ffd700;font-weight:900;font-size:14px;margin-top:4px}
-.cricketHeader{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;text-align:center;margin-bottom:4px}
-.cricketGrid{display:grid;grid-template-columns:1fr 60px 1fr;row-gap:6px;align-items:center}
+
+/* CRICKET LAYOUT B */
+.cricketHeader{
+  display:grid;
+  grid-template-columns:1fr auto 1fr;
+  gap:6px;
+  text-align:center;
+  margin-bottom:4px
+}
+.cricketGrid{
+  display:grid;
+  grid-template-columns:1fr 60px 1fr;
+  row-gap:6px;
+  align-items:center
+}
 .center{font-weight:900;text-align:center}
 .marks{display:flex;justify-content:center;gap:4px}
 .mark{width:8px;height:18px;background:#333;border-radius:3px}
 .mark.on{background:var(--gold)}
 .activePlayer{outline:2px solid var(--gold);border-radius:6px}
 .scoreBox{text-align:center;font-weight:900}
+
+/* TABLE */
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{border-bottom:1px solid #333;padding:6px;text-align:center}
 .table th{color:var(--gold)}
-/* Modal */
-.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50}
-.modal .box{background:#000;border:2px solid var(--gold);border-radius:14px;max-width:900px;width:95%;max-height:90vh;overflow:auto;padding:10px}
-.modal .box h3{color:var(--gold);margin:0 0 6px}
-.modal .close{float:right;background:#000;color:var(--gold);border:2px solid var(--gold);border-radius:8px;padding:4px 8px;font-weight:900}
-@media(max-width:768px){.score{font-size:34px}}
-@media(max-width:480px){.marks .mark{height:14px;width:6px}.numbers{grid-template-columns:repeat(5,1fr)}}
+
+/* MODAL */
+.modal{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.6);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:50
+}
+.modal.hidden{
+  display:none;
+  pointer-events:none
+}
+.modal .box{
+  background:#000;
+  border:2px solid var(--gold);
+  border-radius:14px;
+  max-width:900px;
+  width:95%;
+  max-height:90vh;
+  overflow:auto;
+  padding:10px
+}
+.modal .close{
+  float:right;
+  background:#000;
+  color:var(--gold);
+  border:2px solid var(--gold);
+  border-radius:8px;
+  padding:4px 8px;
+  font-weight:900
+}
+
+/* MOBILE */
+@media(max-width:768px){
+  .score{font-size:34px}
+}
+@media(max-width:480px){
+  .marks .mark{height:14px;width:6px}
+  .numbers{grid-template-columns:repeat(5,1fr)}
+}
 </style>
 </head>
+
 <body>
 <div class="app">
   <div class="header">
     <div class="status" id="status">Startmenü</div>
     <div style="display:flex;gap:6px">
-      <button onclick="openMatches()">📋 Matches</button>
+      <button id="matchesBtn" class="hidden" onclick="openMatches()">📋 Matches</button>
       <button onclick="showStats()">📊</button>
       <button onclick="resetAppState()">⬅ Menü</button>
     </div>
   </div>
 
+  <!-- START -->
   <div id="start" class="panel">
     <div class="modes">
       <button class="mode active" onclick="start501()">501</button>
@@ -73,6 +201,7 @@ body{margin:0;background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%)
     </div>
   </div>
 
+  <!-- SETUP -->
   <div id="setup" class="panel hidden">
     <div class="sub" id="setupTitle" style="color:var(--gold)"></div>
     <div id="liveTables"></div>
@@ -86,6 +215,7 @@ body{margin:0;background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%)
     <button class="btn green" onclick="confirmSetup()">Start</button>
   </div>
 
+  <!-- 501 -->
   <div id="game501" class="panel hidden">
     <div class="scores">
       <div class="playerBox active" id="p0">
@@ -101,6 +231,7 @@ body{margin:0;background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%)
     </div>
   </div>
 
+  <!-- CRICKET -->
   <div id="gameCricket" class="panel hidden">
     <div class="cricketHeader">
       <div id="cn0"></div><div>ZIEL</div><div id="cn1"></div>
@@ -111,6 +242,7 @@ body{margin:0;background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%)
     <div class="cricketGrid" id="cgrid"></div>
   </div>
 
+  <!-- INPUT -->
   <div id="input" class="panel hidden">
     <div class="modes">
       <button class="mode active" onclick="setMult(1)">Single</button>
@@ -128,9 +260,11 @@ body{margin:0;background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%)
     </div>
   </div>
 
+  <!-- STATS -->
   <div id="tablePanel" class="panel hidden"></div>
 </div>
 
+<!-- MODAL -->
 <div id="modal" class="modal hidden">
   <div class="box">
     <button class="close" onclick="closeModal()">✖</button>
@@ -140,214 +274,320 @@ body{margin:0;background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%)
 </div>
 
 <script>
-/* --- STATE --- */
+/* =======================
+   STATE & CORE LOGIC
+   ======================= */
+
 let mode=null, submode=null, groups=1;
 let players=[], turn=0, mult=1, dartsThisTurn=0;
 let history=[];
 let scores501=[501,501], cricket=null, legStats=null;
 let tournament=null;
-const cricketTargets=[20,19,18,17,16,15,25];
-const statsKey='dart_stats_v3';
 
-/* --- INPUT BUILD --- */
+const cricketTargets=[20,19,18,17,16,15,25];
+const statsKey='dart_stats_final';
+
+/* =======================
+   INPUT BUILD
+   ======================= */
 const nums=document.getElementById('nums');
 (function(){
-  for(let i=0;i<=20;i++){const b=document.createElement('button');b.className='num';b.textContent=i;b.onclick=()=>boardThrow(i*mult);nums.appendChild(b)}
-  const b25=document.createElement('button');b25.className='num bull';b25.textContent='BULL';b25.onclick=()=>boardThrow(25);nums.appendChild(b25)
-  const b50=document.createElement('button');b50.className='num bull';b50.textContent='DBULL';b50.onclick=()=>boardThrow(50);nums.appendChild(b50)
+  for(let i=0;i<=20;i++){
+    const b=document.createElement('button');
+    b.className='num';
+    b.textContent=i;
+    b.onclick=()=>boardThrow(i*mult);
+    nums.appendChild(b);
+  }
+  ['BULL','DBULL'].forEach((t,i)=>{
+    const b=document.createElement('button');
+    b.className='num bull';
+    b.textContent=t;
+    b.onclick=()=>boardThrow(i===0?25:50);
+    nums.appendChild(b);
+  });
 })();
 
-/* --- RESET --- */
-function hideAll(){['start','setup','game501','gameCricket','input','tablePanel'].forEach(id=>document.getElementById(id).classList.add('hidden'))}
+/* =======================
+   RESET / NAV
+   ======================= */
+function hideAll(){
+  ['start','setup','game501','gameCricket','input','tablePanel']
+    .forEach(id=>document.getElementById(id).classList.add('hidden'));
+}
 function setStatus(t){document.getElementById('status').textContent=t}
+
 function resetAppState(){
-  mode=submode=null;players=[];turn=0;mult=1;dartsThisTurn=0;history=[];
+  closeModal();
+  document.getElementById('matchesBtn').classList.add('hidden');
+
+  mode=submode=null;
+  players=[];turn=0;mult=1;dartsThisTurn=0;history=[];
   scores501=[501,501];cricket=null;legStats=null;tournament=null;groups=1;
-  hideAll();document.getElementById('start').classList.remove('hidden');setStatus('Startmenü')
+
+  hideAll();
+  document.getElementById('start').classList.remove('hidden');
+  setStatus('Startmenü');
 }
 
-/* --- START --- */
-function start501(){hideAll();setStatus('501 – Double Out');mode='501';submode='single';players=['Spieler 1','Spieler 2'];scores501=[501,501];legStats=[initLeg(),initLeg()];turn=0;show501()}
-function startCricket(){hideAll();setStatus('Cricket');mode='cricket';submode='single';players=['Spieler 1','Spieler 2'];cricket=[initCricket(),initCricket()];turn=0;showCricket()}
-function start501Tournament(){hideAll();setStatus('501 – Turnier Setup');mode='501';submode='tournament';openSetup('501 – Turnier Setup')}
-function startCricketTournament(){hideAll();setStatus('Cricket – Turnier Setup');mode='cricket';submode='tournament';openSetup('Cricket – Turnier Setup')}
+/* =======================
+   START MODES
+   ======================= */
+function start501(){
+  hideAll();setStatus('501 – Double Out');
+  mode='501';submode='single';
+  players=['Spieler 1','Spieler 2'];
+  scores501=[501,501];
+  legStats=[{points:0,darts:0},{points:0,darts:0}];
+  turn=0;
+  document.getElementById('game501').classList.remove('hidden');
+  document.getElementById('input').classList.remove('hidden');
+  update501();
+}
+function startCricket(){
+  hideAll();setStatus('Cricket');
+  mode='cricket';submode='single';
+  players=['Spieler 1','Spieler 2'];
+  cricket=[initCricket(),initCricket()];
+  turn=0;
+  document.getElementById('gameCricket').classList.remove('hidden');
+  document.getElementById('input').classList.remove('hidden');
+  buildCricketGrid();
+  updateCricket();
+}
+function start501Tournament(){
+  hideAll();setStatus('501 – Turnier Setup');
+  document.getElementById('matchesBtn').classList.remove('hidden');
+  mode='501';submode='tournament';
+  openSetup();
+}
+function startCricketTournament(){
+  hideAll();setStatus('Cricket – Turnier Setup');
+  document.getElementById('matchesBtn').classList.remove('hidden');
+  mode='cricket';submode='tournament';
+  openSetup();
+}
 
-/* --- SETUP --- */
-function openSetup(title){
-  document.getElementById('setupTitle').textContent=title;
+/* =======================
+   SETUP / TOURNAMENT
+   ======================= */
+function openSetup(){
   document.getElementById('setup').classList.remove('hidden');
-  renderNames(); renderLiveTables();
+  renderNames();
 }
-function setGroups(g){groups=g;document.getElementById('g1').classList.toggle('active',g===1);document.getElementById('g2').classList.toggle('active',g===2);renderLiveTables()}
+function setGroups(g){
+  groups=g;
+  document.getElementById('g1').classList.toggle('active',g===1);
+  document.getElementById('g2').classList.toggle('active',g===2);
+}
 function renderNames(){
   const n=+document.getElementById('pCount').value;
-  const wrap=document.getElementById('names');wrap.innerHTML='';
-  for(let i=0;i<n;i++){const inp=document.createElement('input');inp.value='Spieler '+(i+1);wrap.appendChild(inp)}
+  const wrap=document.getElementById('names');
+  wrap.innerHTML='';
+  for(let i=0;i<n;i++){
+    const inp=document.createElement('input');
+    inp.value='Spieler '+(i+1);
+    wrap.appendChild(inp);
+  }
 }
 function confirmSetup(){
   const names=[...document.querySelectorAll('#names input')].map(i=>i.value);
-  tournament={players:names,groups,results:{},matches:[],idx:0};
-  tournament.matches=buildSchedule(names,groups).map(([a,b])=>({a,b,done:false,res:''}));
+  tournament={
+    players:names,
+    matches:buildSchedule(names,groups).map(m=>({a:m[0],b:m[1],done:false,res:''}))
+  };
   startNextTournamentMatch();
 }
-
-/* --- TOURNAMENT FLOW --- */
 function buildSchedule(names,g){
   const arr=[];
-  if(g===1){for(let i=0;i<names.length;i++)for(let j=i+1;j<names.length;j++)arr.push([names[i],names[j]])}
-  else{
-    const mid=Math.ceil(names.length/2),A=names.slice(0,mid),B=names.slice(mid);
-    [A,B].forEach(G=>{for(let i=0;i<G.length;i++)for(let j=i+1;j<G.length;j++)arr.push([G[i],G[j]])})
+  if(g===1){
+    for(let i=0;i<names.length;i++)
+      for(let j=i+1;j<names.length;j++)
+        arr.push([names[i],names[j]]);
+  }else{
+    const mid=Math.ceil(names.length/2);
+    const A=names.slice(0,mid),B=names.slice(mid);
+    [A,B].forEach(G=>{
+      for(let i=0;i<G.length;i++)
+        for(let j=i+1;j<G.length;j++)
+          arr.push([G[i],G[j]]);
+    });
   }
   return arr;
 }
 function startNextTournamentMatch(){
-  renderLiveTables();
   const next=tournament.matches.find(m=>!m.done);
-  if(!next){saveStats(mode==='501'?'501-tournament':'cricket-tournament',tournament.players);resetAppState();return}
-  players=[next.a,next.b];turn=0;dartsThisTurn=0;history=[];
-  if(mode==='501'){scores501=[501,501];legStats=[initLeg(),initLeg()];show501()}
-  else{cricket=[initCricket(),initCricket()];showCricket()}
+  if(!next){resetAppState();return;}
+  players=[next.a,next.b];
+  turn=0;dartsThisTurn=0;history=[];
+  if(mode==='501'){
+    scores501=[501,501];
+    legStats=[{points:0,darts:0},{points:0,darts:0}];
+    document.getElementById('game501').classList.remove('hidden');
+  }else{
+    cricket=[initCricket(),initCricket()];
+    document.getElementById('gameCricket').classList.remove('hidden');
+    buildCricketGrid();
+  }
+  document.getElementById('input').classList.remove('hidden');
 }
 
-/* --- SHOW --- */
-function show501(){hideAll();document.getElementById('game501').classList.remove('hidden');document.getElementById('input').classList.remove('hidden');update501()}
-function showCricket(){hideAll();document.getElementById('gameCricket').classList.remove('hidden');document.getElementById('input').classList.remove('hidden');buildCricketGrid();updateCricket()}
-
-/* --- MULT --- */
-function setMult(m){mult=m;document.querySelectorAll('#input .mode').forEach(b=>b.classList.remove('active'));document.querySelectorAll('#input .mode')[m-1].classList.add('active')}
+/* =======================
+   INPUT / GAME LOGIC
+   ======================= */
+function setMult(m){
+  mult=m;
+  document.querySelectorAll('#input .mode').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#input .mode')[m-1].classList.add('active');
+}
 function resetMult(){setMult(1)}
 
-/* --- LEG / AVG --- */
-function initLeg(){return{points:0,darts:0}}
-function calcAvg(ls){return ls.darts?((ls.points/ls.darts)*3).toFixed(1):'0.0'}
-
-/* --- SNAPSHOT --- */
-function snapshot(){return JSON.stringify({scores501,cricket,turn,mult,dartsThisTurn,legStats})}
-function restore(s){const o=JSON.parse(s);scores501=o.scores501;cricket=o.cricket;turn=o.turn;mult=o.mult;dartsThisTurn=o.dartsThisTurn;legStats=o.legStats}
-
-/* --- THROWS --- */
 function boardThrow(v){history.push(snapshot());processThrow(v,true)}
-function manualThrow(){const v=+document.getElementById('manual').value;if(v>=0&&v<=60){history.push(snapshot());processThrow(v,false)}document.getElementById('manual').value=''}
-function processThrow(v,isBoard){
-  if(mode==='501'){
-    legStats[turn].points+=v;legStats[turn].darts++;
-    const cur=scores501[turn]-v;
-    if(cur<0||(cur===0&&v%2!==0)){restore(history.pop());dartsThisTurn=0;nextTurn();resetMult();return}
-    scores501[turn]=cur;
-    if(cur===0){
-      markMatchResult('501',turn===0?players[0]:players[1],`${scores501[1-turn]===501?1:1}-0`);
-      saveStats('501',players); if(submode==='tournament')startNextTournamentMatch(); else resetAppState(); return
-    }
-    update501()
-  }else{
-    const map={15:15,16:16,17:17,18:18,19:19,20:20,25:25,50:25};
-    const base=(v===50?25:v/mult);const k=map[base];
-    if(k){for(let i=0;i<mult;i++){if(cricket[turn].m[k]<3)cricket[turn].m[k]++;else if(cricket[1-turn].m[k]<3)cricket[turn].pts+=k}}
-    updateCricket(); checkCricketEnd()
-  }
-  if(isBoard){dartsThisTurn++; if(dartsThisTurn>=3){dartsThisTurn=0;nextTurn()}}
-  resetMult()
+function manualThrow(){
+  const v=+document.getElementById('manual').value;
+  if(v>=0&&v<=60){history.push(snapshot());processThrow(v,false)}
+  document.getElementById('manual').value='';
 }
 
-/* --- TURN / UNDO --- */
-function nextTurn(){turn=1-turn;dartsThisTurn=0;update501();updateCricket()}
-function undo(){if(history.length){restore(history.pop());update501();updateCricket()}}
+function snapshot(){
+  return JSON.stringify({scores501,cricket,turn,mult,dartsThisTurn,legStats});
+}
+function restore(s){
+  const o=JSON.parse(s);
+  scores501=o.scores501;cricket=o.cricket;turn=o.turn;
+  mult=o.mult;dartsThisTurn=o.dartsThisTurn;legStats=o.legStats;
+}
+function undo(){
+  if(history.length){
+    restore(history.pop());
+    update501();updateCricket();
+  }
+}
+function nextTurn(){
+  turn=1-turn;
+  dartsThisTurn=0;
+  update501();updateCricket();
+}
 
-/* --- 501 UI --- */
+function processThrow(v,isBoard){
+  if(mode==='501'){
+    legStats[turn].points+=v;
+    legStats[turn].darts++;
+    const cur=scores501[turn]-v;
+    if(cur<0||(cur===0&&v%2!==0)){
+      restore(history.pop());
+      nextTurn();resetMult();return;
+    }
+    scores501[turn]=cur;
+    if(cur===0){
+      if(submode==='tournament'){
+        const m=tournament.matches.find(x=>!x.done&&((x.a===players[0]&&x.b===players[1])||(x.a===players[1]&&x.b===players[0])));
+        if(m){m.done=true;m.res='1-0'}
+        startNextTournamentMatch();
+      }else resetAppState();
+      return;
+    }
+    update501();
+  }else{
+    const map={15:15,16:16,17:17,18:18,19:19,20:20,25:25,50:25};
+    const base=(v===50?25:v/mult);
+    const k=map[base];
+    if(k){
+      for(let i=0;i<mult;i++){
+        if(cricket[turn].m[k]<3)cricket[turn].m[k]++;
+        else if(cricket[1-turn].m[k]<3)cricket[turn].pts+=k;
+      }
+    }
+    updateCricket();
+  }
+  if(isBoard){
+    dartsThisTurn++;
+    if(dartsThisTurn>=3){nextTurn()}
+  }
+  resetMult();
+}
+
+/* =======================
+   UI UPDATES
+   ======================= */
 function getCheckout(score){
-  if(score>170||score<=1)return''; if(score===170)return'T20 T20 D25';
-  if(score===167)return'T20 T19 D25'; if(score===164)return'T20 T18 D25';
-  if(score<=40&&score%2===0)return'D'+(score/2); return''
+  if(score>170||score<=1)return'';
+  if(score===170)return'T20 T20 D25';
+  if(score===167)return'T20 T19 D25';
+  if(score===164)return'T20 T18 D25';
+  if(score<=40&&score%2===0)return'D'+(score/2);
+  return'';
 }
 function update501(){
   if(mode!=='501')return;
-  document.getElementById('p0n').textContent=players[0]+' (Ø '+calcAvg(legStats[0])+')';
-  document.getElementById('p1n').textContent=players[1]+' (Ø '+calcAvg(legStats[1])+')';
-  document.getElementById('s0').textContent=scores501[0];document.getElementById('s1').textContent=scores501[1];
-  document.getElementById('co0').textContent=getCheckout(scores501[0]);document.getElementById('co1').textContent=getCheckout(scores501[1]);
-  document.getElementById('p0').classList.toggle('active',turn===0);document.getElementById('p1').classList.toggle('active',turn===1)
+  document.getElementById('p0n').textContent=players[0];
+  document.getElementById('p1n').textContent=players[1];
+  document.getElementById('s0').textContent=scores501[0];
+  document.getElementById('s1').textContent=scores501[1];
+  document.getElementById('co0').textContent=getCheckout(scores501[0]);
+  document.getElementById('co1').textContent=getCheckout(scores501[1]);
+  document.getElementById('p0').classList.toggle('active',turn===0);
+  document.getElementById('p1').classList.toggle('active',turn===1);
 }
-
-/* --- CRICKET --- */
-function initCricket(){return{pts:0,m:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}}}
+function initCricket(){
+  return{pts:0,m:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}};
+}
 function buildCricketGrid(){
-  const g=document.getElementById('cgrid');g.innerHTML='';
-  document.getElementById('cn0').textContent=players[0];document.getElementById('cn1').textContent=players[1];
+  const g=document.getElementById('cgrid');
+  g.innerHTML='';
+  document.getElementById('cn0').textContent=players[0];
+  document.getElementById('cn1').textContent=players[1];
   cricketTargets.forEach(t=>{
-    const l=document.createElement('div');l.className='marks';l.id='m0_'+t;
-    const c=document.createElement('div');c.className='center';c.textContent=(t===25?'BULL':t);
-    const r=document.createElement('div');r.className='marks';r.id='m1_'+t; g.append(l,c,r)
-  })
+    g.insertAdjacentHTML('beforeend',`
+      <div class="marks" id="m0_${t}"></div>
+      <div class="center">${t===25?'BULL':t}</div>
+      <div class="marks" id="m1_${t}"></div>
+    `);
+  });
 }
 function updateCricket(){
   if(mode!=='cricket')return;
   document.getElementById('cp0').textContent=cricket[0].pts+' Punkte';
   document.getElementById('cp1').textContent=cricket[1].pts+' Punkte';
   cricketTargets.forEach(t=>{
-    for(let p=0;p<2;p++){
-      const el=document.getElementById('m'+p+'_'+t);el.innerHTML='';
-      for(let i=0;i<3;i++){const d=document.createElement('div');d.className='mark'+(cricket[p].m[t]>i?' on':'');el.appendChild(d)}
-      el.classList.toggle('activePlayer',p===turn)
-    }
-  })
-}
-function checkCricketEnd(){
-  const allClosed=cricketTargets.every(t=>cricket[0].m[t]>=3&&cricket[1].m[t]>=3);
-  if(allClosed&&cricket[0].pts!==cricket[1].pts){
-    markMatchResult('cricket',cricket[0].pts>cricket[1].pts?players[0]:players[1],`${cricket[0].pts}-${cricket[1].pts}`);
-    saveStats('cricket',players); if(submode==='tournament')startNextTournamentMatch(); else resetAppState()
-  }
+    [0,1].forEach(p=>{
+      const el=document.getElementById(`m${p}_${t}`);
+      el.innerHTML='';
+      for(let i=0;i<3;i++){
+        el.insertAdjacentHTML('beforeend',`<div class="mark ${cricket[p].m[t]>i?'on':''}"></div>`);
+      }
+      el.classList.toggle('activePlayer',p===turn);
+    });
+  });
 }
 
-/* --- TOURNAMENT TABLES & MODAL --- */
-function renderLiveTables(){
-  const el=document.getElementById('liveTables'); if(!el||!tournament)return;
-  const rows={}; tournament.players.forEach(p=>rows[p]={p,sp:0,w:0,l:0,pts:0,diff:0});
-  tournament.matches.forEach(m=>{
-    if(m.done){
-      rows[m.a].sp++; rows[m.b].sp++;
-      if(m.w===m.a){rows[m.a].w++;rows[m.b].l++;rows[m.a].pts+=2}
-      else{rows[m.b].w++;rows[m.a].l++;rows[m.b].pts+=2}
-    }
-  });
-  let html='<table class="table"><tr><th>Spieler</th><th>Sp</th><th>S</th><th>N</th><th>P</th></tr>';
-  Object.values(rows).sort((a,b)=>b.pts-a.pts).forEach(r=>{
-    html+=`<tr><td>${r.p}</td><td>${r.sp}</td><td>${r.w}</td><td>${r.l}</td><td>${r.pts}</td></tr>`
-  });
-  html+='</table>'; el.innerHTML=html
-}
-function markMatchResult(type,winner,res){
-  if(!tournament)return;
-  const m=tournament.matches.find(x=>!x.done&&((x.a===players[0]&&x.b===players[1])||(x.a===players[1]&&x.b===players[0])));
-  if(m){m.done=true;m.w=winner;m.res=res}
-  renderLiveTables()
-}
+/* =======================
+   MODAL & STATS
+   ======================= */
 function openMatches(){
   if(!tournament)return;
-  const m=document.getElementById('modal');m.classList.remove('hidden');
-  const c=document.getElementById('modalContent');
+  const modal=document.getElementById('modal');
+  const cont=document.getElementById('modalContent');
+  modal.classList.remove('hidden');
   let html='<table class="table"><tr><th>Match</th><th>Status</th><th>Ergebnis</th></tr>';
-  tournament.matches.forEach(x=>{
-    html+=`<tr><td>${x.a} vs ${x.b}</td><td>${x.done?'gespielt':'offen'}</td><td>${x.res||''}</td></tr>`
+  tournament.matches.forEach(m=>{
+    html+=`<tr><td>${m.a} vs ${m.b}</td><td>${m.done?'gespielt':'offen'}</td><td>${m.res}</td></tr>`;
   });
-  html+='</table>'; c.innerHTML=html
+  html+='</table>';
+  cont.innerHTML=html;
 }
-function closeModal(){document.getElementById('modal').classList.add('hidden')}
-
-/* --- STATS --- */
-function loadStats(){return JSON.parse(localStorage.getItem(statsKey)||'[]')}
-function saveStats(type,ps){const s=loadStats();s.push({date:new Date().toISOString(),type,players:ps});localStorage.setItem(statsKey,JSON.stringify(s))}
+function closeModal(){
+  document.getElementById('modal').classList.add('hidden');
+}
 function showStats(){
-  hideAll();setStatus('Statistiken');
-  const panel=document.getElementById('tablePanel');panel.classList.remove('hidden');
-  const data=loadStats();
-  let html='<table class="table"><tr><th>Datum</th><th>Typ</th><th>Spieler</th></tr>';
-  data.forEach(d=>html+=`<tr><td>${new Date(d.date).toLocaleString()}</td><td>${d.type}</td><td>${(d.players||[]).join(' vs ')}</td></tr>`);
-  html+='</table><button class="btn red" onclick="clearStats()">Statistiken löschen</button>';
-  panel.innerHTML=html
+  hideAll();
+  document.getElementById('tablePanel').classList.remove('hidden');
+  const data=JSON.parse(localStorage.getItem(statsKey)||'[]');
+  let html='<table class="table"><tr><th>Datum</th><th>Typ</th></tr>';
+  data.forEach(d=>html+=`<tr><td>${d.date}</td><td>${d.type}</td></tr>`);
+  html+='</table>';
+  document.getElementById('tablePanel').innerHTML=html;
 }
-function clearStats(){localStorage.removeItem(statsKey);showStats()}
 </script>
 </body>
 </html>
