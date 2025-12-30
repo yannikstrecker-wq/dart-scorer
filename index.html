@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dart App</title>
+<title>Dart Web App</title>
 <style>
 :root{
   --green:#1e7f4f;
@@ -23,15 +23,23 @@ body{
 }
 .app{max-width:1200px;margin:auto}
 .header{
-  text-align:center;border:2px solid var(--gold);border-radius:14px;
-  padding:12px;background:#000;margin-bottom:12px
+  display:flex;justify-content:space-between;align-items:center;
+  border:2px solid var(--gold);border-radius:14px;
+  padding:10px;background:#000;margin-bottom:12px
+}
+.header h1{margin:0;font-size:20px}
+.header .status{color:var(--gold);font-weight:900}
+.header button{
+  background:#000;color:var(--gold);
+  border:2px solid var(--gold);border-radius:10px;
+  padding:6px 10px;font-weight:900
 }
 .panel{background:var(--panel);padding:12px;border-radius:14px;margin-bottom:12px}
 .hidden{display:none}
 .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
 .mode{
-  padding:10px;font-weight:900;border-radius:10px;border:2px solid #0f5d35;
-  background:#000;color:#eee
+  padding:10px;font-weight:900;border-radius:10px;
+  border:2px solid #0f5d35;background:#000;color:#eee
 }
 .mode.active{background:var(--gold);color:#000}
 .scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -58,22 +66,24 @@ body{
   background:#000;color:#fff;text-align:center;font-weight:900
 }
 .quickInput button{
-  padding:10px 14px;border-radius:8px;border:none;font-weight:900;
-  background:var(--gold)
+  padding:10px 14px;border-radius:8px;border:none;
+  font-weight:900;background:var(--gold)
 }
 .table{width:100%;border-collapse:collapse;margin-top:8px}
 .table th,.table td{border-bottom:1px solid #333;padding:6px;text-align:center}
 .table th{color:var(--gold)}
-.small{font-size:12px;opacity:.9}
+.marks{font-size:12px;line-height:1.2}
 </style>
 </head>
 <body>
 <div class="app">
-  <div class="header"><h1>🎯 Dart App</h1></div>
+  <div class="header">
+    <h1>🎯 Dart App</h1>
+    <div class="status" id="status">Startmenü</div>
+    <button onclick="resetAppState()">⬅ Zurück ins Menü</button>
+  </div>
 
-  <!-- START -->
   <div id="start" class="panel">
-    <h3>Spielauswahl</h3>
     <div class="modes">
       <button class="mode active" onclick="selectMode('501')">501 – 1vs1</button>
       <button class="mode" onclick="selectMode('cricket')">Cricket – 1vs1</button>
@@ -81,32 +91,35 @@ body{
     </div>
   </div>
 
-  <!-- TOURNAMENT SETUP -->
   <div id="tSetup" class="panel hidden">
-    <h3>Turnier Setup</h3>
+    <div class="sub" style="color:var(--gold)">Turnier – Setup</div>
     <label>Spieleranzahl (4–7):</label>
-    <input id="pCount" type="number" min="4" max="7" value="4">
-    <div id="pNames"></div>
+    <input id="pCount" type="number" min="4" max="7" value="4" onchange="renderNames()">
+    <div style="margin-top:6px">
+      <button class="mode active" id="g1" onclick="setGroups(1)">1 Gruppe</button>
+      <button class="mode" id="g2" onclick="setGroups(2)">2 Gruppen</button>
+    </div>
+    <div id="pNames" style="margin-top:8px"></div>
     <button class="btn green" onclick="startTournament()">Turnier starten</button>
   </div>
 
-  <!-- SCOREBOARD -->
   <div id="game" class="panel hidden">
     <div class="scores">
       <div class="playerBox active" id="p0">
         <div class="sub" id="p0n"></div>
         <div class="score" id="s0"></div>
         <div class="checkout" id="c0"></div>
+        <div class="marks" id="m0"></div>
       </div>
       <div class="playerBox" id="p1">
         <div class="sub" id="p1n"></div>
         <div class="score" id="s1"></div>
         <div class="checkout" id="c1"></div>
+        <div class="marks" id="m1"></div>
       </div>
     </div>
   </div>
 
-  <!-- INPUT -->
   <div id="input" class="panel hidden">
     <div class="modes">
       <button class="mode active" onclick="setMult(1)">Single</button>
@@ -124,194 +137,157 @@ body{
     </div>
   </div>
 
-  <!-- TABLE / RESULTS -->
   <div id="tablePanel" class="panel hidden"></div>
 </div>
 
 <script>
-/* ---------- STATE ---------- */
-let mode='501'; // 501 | cricket | tournament
-let mult=1;
-let turn=0;
-let history=[];
-let players=[];
-let scores=[];
-let cricket;
-let tournament;
+let appMode=null;
+let statusEl=document.getElementById('status');
+let mult=1,turn=0,history=[];
+let players=[],scores=[],cricketState=null;
+let tournament=null,groupCount=1;
 
-/* ---------- INIT ---------- */
 const numsEl=document.getElementById('nums');
-(function buildNums(){
+(function(){
   for(let i=0;i<=20;i++){
-    const b=document.createElement('button');
-    b.className='num';
-    b.textContent=i;
+    let b=document.createElement('button');
+    b.className='num'; b.textContent=i;
     b.onclick=()=>throwDart(i*mult);
     numsEl.appendChild(b);
   }
-  const b25=document.createElement('button');
+  let b25=document.createElement('button');
   b25.className='num bull'; b25.textContent='BULL';
   b25.onclick=()=>throwDart(25);
   numsEl.appendChild(b25);
-  const b50=document.createElement('button');
+  let b50=document.createElement('button');
   b50.className='num bull'; b50.textContent='DBULL';
   b50.onclick=()=>throwDart(50);
   numsEl.appendChild(b50);
 })();
 
-/* ---------- UI ---------- */
-function selectMode(m){
-  document.querySelectorAll('#start .mode').forEach(b=>b.classList.remove('active'));
-  event.target.classList.add('active');
-  mode=m;
-  document.getElementById('start').classList.add('hidden');
-  if(m==='tournament'){
-    setupTournamentUI();
-  }else{
-    startGame(m==='501'?['Spieler 1','Spieler 2']:['Spieler 1','Spieler 2']);
-  }
-}
-function setupTournamentUI(){
-  document.getElementById('tSetup').classList.remove('hidden');
-  renderNames();
-}
-function renderNames(){
-  const n=+document.getElementById('pCount').value;
-  const wrap=document.getElementById('pNames');
-  wrap.innerHTML='';
-  for(let i=0;i<n;i++){
-    const inp=document.createElement('input');
-    inp.placeholder='Spieler '+(i+1);
-    inp.value='Spieler '+(i+1);
-    wrap.appendChild(inp);
-  }
+function resetAppState(){
+  appMode=null; mult=1; turn=0; history=[];
+  players=[]; scores=[]; cricketState=null; tournament=null; groupCount=1;
+  document.getElementById('start').classList.remove('hidden');
+  document.getElementById('tSetup').classList.add('hidden');
+  document.getElementById('game').classList.add('hidden');
+  document.getElementById('input').classList.add('hidden');
+  document.getElementById('tablePanel').classList.add('hidden');
+  statusEl.textContent='Startmenü';
 }
 
-/* ---------- GAME START ---------- */
+function selectMode(m){
+  appMode=m;
+  document.getElementById('start').classList.add('hidden');
+  if(m==='501'){ statusEl.textContent='501 – Double Out'; startGame(['Spieler 1','Spieler 2']); }
+  if(m==='cricket'){ statusEl.textContent='Cricket'; startGame(['Spieler 1','Spieler 2']); }
+  if(m==='tournament'){ statusEl.textContent='Turnier – Setup'; document.getElementById('tSetup').classList.remove('hidden'); renderNames(); }
+}
+
 function startGame(names){
-  players=names.slice(0,2);
-  scores = (mode==='501') ? [501,501] : [0,0];
-  cricket = (mode==='cricket') ? initCricket() : null;
+  players=names;
   turn=0; history=[];
-  document.getElementById('tSetup').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
   document.getElementById('input').classList.remove('hidden');
-  document.getElementById('tablePanel').classList.add('hidden');
+  if(appMode==='501'){
+    scores=[501,501];
+    cricketState=null;
+  }else if(appMode==='cricket'){
+    scores=[0,0];
+    cricketState=[initCricket(),initCricket()];
+  }
   updateUI();
 }
+
 function initCricket(){
-  const marks=()=>({15:0,16:0,17:0,18:0,19:0,20:0,25:0});
-  return [{m:marks(),pts:0},{m:marks(),pts:0}];
+  return {pts:0, m:{15:0,16:0,17:0,18:0,19:0,20:0,25:0}};
 }
 
-/* ---------- THROW ---------- */
 function setMult(m){
   mult=m;
   document.querySelectorAll('#input .mode').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#input .mode')[m-1].classList.add('active');
 }
 function resetMult(){ setMult(1); }
+
 function manualThrow(){
-  const v=+document.getElementById('manual').value;
-  if(!Number.isInteger(v)||v<0||v>60) return;
-  throwDart(v);
+  let v=+document.getElementById('manual').value;
+  if(v>=0&&v<=60) throwDart(v);
   document.getElementById('manual').value='';
 }
+
+function snapshot(){
+  return JSON.stringify({scores,cricketState,turn});
+}
+function restore(s){
+  let o=JSON.parse(s);
+  scores=o.scores; cricketState=o.cricketState; turn=o.turn;
+}
+
 function throwDart(v){
   history.push(snapshot());
-  if(mode==='501'){
-    const cur=scores[turn]-v;
-    if(cur<0 || (cur===0 && (v%2!==0))) { restore(); nextTurn(); resetMult(); return; }
+  if(appMode==='501'){
+    let cur=scores[turn]-v;
+    if(cur<0 || (cur===0 && v%2!==0)){ restore(history.pop()); nextTurn(); resetMult(); return; }
     scores[turn]=cur;
-    if(cur===0){ finishLeg(turn); }
-  }else if(mode==='cricket'){
-    handleCricket(v);
+    if(cur===0){ alert(players[turn]+' gewinnt!'); resetAppState(); return; }
   }
-  resetMult();
-  updateUI();
-}
-function handleCricket(v){
-  const map={15:15,16:16,17:17,18:18,19:19,20:20,25:25};
-  const k=map[v]||null;
-  if(!k) return;
-  const me=cricket[turn], opp=cricket[1-turn];
-  for(let i=0;i<mult;i++){
-    if(me.m[k]<3) me.m[k]++;
-    else if(opp.m[k]<3) me.pts+=k;
+  if(appMode==='cricket'){
+    let map={15:15,16:16,17:17,18:18,19:19,20:20,25:25};
+    let k=map[v]||null;
+    if(k){
+      for(let i=0;i<mult;i++){
+        if(cricketState[turn].m[k]<3) cricketState[turn].m[k]++;
+        else if(cricketState[1-turn].m[k]<3) cricketState[turn].pts+=k;
+      }
+    }
   }
+  resetMult(); updateUI();
 }
 
-/* ---------- FLOW ---------- */
 function nextTurn(){ turn=1-turn; updateUI(); }
-function undo(){ if(history.length) restore(history.pop()); updateUI(); }
-function snapshot(){ return JSON.stringify({scores,cricket,turn}); }
-function restore(s){
-  const o=JSON.parse(s);
-  scores=o.scores; cricket=o.cricket; turn=o.turn;
-}
-function finishLeg(winner){
-  if(mode!=='tournament'){ alert(players[winner]+' gewinnt!'); startGame(players); return; }
-  recordTournamentResult(winner);
-}
+function undo(){ if(history.length){ restore(history.pop()); updateUI(); } }
 
-/* ---------- UI UPDATE ---------- */
 function updateUI(){
-  document.getElementById('p0n').textContent=players[0];
-  document.getElementById('p1n').textContent=players[1];
-  document.getElementById('s0').textContent=(mode==='501')?scores[0]:cricket?cricket[0].pts:'';
-  document.getElementById('s1').textContent=(mode==='501')?scores[1]:cricket?cricket[1].pts:'';
+  document.getElementById('p0n').textContent=players[0]||'';
+  document.getElementById('p1n').textContent=players[1]||'';
   document.getElementById('p0').classList.toggle('active',turn===0);
   document.getElementById('p1').classList.toggle('active',turn===1);
-  document.getElementById('c0').textContent='';
-  document.getElementById('c1').textContent='';
+  document.getElementById('s0').textContent=scores[0]||0;
+  document.getElementById('s1').textContent=scores[1]||0;
+  document.getElementById('m0').textContent=cricketState?JSON.stringify(cricketState[0].m):'';
+  document.getElementById('m1').textContent=cricketState?JSON.stringify(cricketState[1].m):'';
 }
 
-/* ---------- TOURNAMENT ---------- */
+function renderNames(){
+  let n=+document.getElementById('pCount').value;
+  let wrap=document.getElementById('pNames');
+  wrap.innerHTML='';
+  for(let i=0;i<n;i++){
+    let inp=document.createElement('input');
+    inp.value='Spieler '+(i+1);
+    wrap.appendChild(inp);
+  }
+}
+
+function setGroups(g){
+  groupCount=g;
+  document.getElementById('g1').classList.toggle('active',g===1);
+  document.getElementById('g2').classList.toggle('active',g===2);
+}
+
 function startTournament(){
-  const names=[...document.querySelectorAll('#pNames input')].map(i=>i.value||'Spieler');
-  tournament={
-    players:names,
-    table:names.map(n=>({n,pts:0,legs:0})),
-    matches:[],
-    idx:0
-  };
-  for(let i=0;i<names.length;i++)
-    for(let j=i+1;j<names.length;j++)
-      tournament.matches.push([names[i],names[j]]);
-  loadMatch();
+  let names=[...document.querySelectorAll('#pNames input')].map(i=>i.value);
+  tournament={players:names,groups:[],idx:0};
+  if(groupCount===1){ tournament.groups=[names]; statusEl.textContent='Turnier – Gruppenphase (1 Gruppe)'; }
+  else{
+    let mid=Math.ceil(names.length/2);
+    tournament.groups=[names.slice(0,mid),names.slice(mid)];
+    statusEl.textContent='Turnier – Gruppenphase (2 Gruppen)';
+  }
+  document.getElementById('tSetup').classList.add('hidden');
+  startGame(tournament.groups[0].slice(0,2));
 }
-function loadMatch(){
-  if(tournament.idx>=tournament.matches.length){ showTable(); return; }
-  const m=tournament.matches[tournament.idx];
-  mode='501';
-  startGame(m);
-}
-function recordTournamentResult(w){
-  const m=tournament.matches[tournament.idx];
-  const win=players[w], lose=players[1-w];
-  const tw=tournament.table.find(x=>x.n===win);
-  const tl=tournament.table.find(x=>x.n===lose);
-  tw.pts+=2; tw.legs++; tl.legs--;
-  tournament.idx++;
-  loadMatch();
-}
-function showTable(){
-  const p=document.getElementById('tablePanel');
-  p.classList.remove('hidden');
-  p.innerHTML='<h3>Tabelle</h3>';
-  const t=document.createElement('table'); t.className='table';
-  t.innerHTML='<tr><th>Spieler</th><th>Punkte</th><th>Legs</th></tr>';
-  tournament.table.sort((a,b)=>b.pts-a.pts||b.legs-a.legs)
-    .forEach(r=>{
-      const tr=document.createElement('tr');
-      tr.innerHTML=`<td>${r.n}</td><td>${r.pts}</td><td>${r.legs}</td>`;
-      t.appendChild(tr);
-    });
-  p.appendChild(t);
-}
-
-/* ---------- VALIDATION ---------- */
-// geprüfte Variablen, keine Duplikate, Bust- & Turnier-Ende behandelt
 </script>
 </body>
 </html>
