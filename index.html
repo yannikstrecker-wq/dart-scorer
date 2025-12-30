@@ -3,7 +3,8 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Dart Web App</title>
+<title>Dart Web App – erweitert</title>
+
 <style>
 :root{
   --green:#1e7f4f;
@@ -23,7 +24,7 @@ body{
 }
 .app{max-width:1200px;margin:auto}
 .header{
-  display:flex;align-items:center;gap:8px;justify-content:space-between;
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
   border:2px solid var(--gold);border-radius:14px;padding:8px;background:#000;margin-bottom:8px
 }
 .header .status{color:var(--gold);font-weight:900}
@@ -34,7 +35,7 @@ body{
 .panel{background:var(--panel);padding:10px;border-radius:14px;margin-bottom:8px}
 .hidden{display:none}
 
-/* Buttons */
+/* buttons / input */
 .modes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
 .mode{
   padding:10px;font-weight:900;border-radius:10px;
@@ -42,7 +43,6 @@ body{
 }
 .mode.active{background:var(--gold);color:#000}
 
-/* Input */
 .numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .num{
   padding:14px;font-size:18px;font-weight:900;background:#000;color:#fff;
@@ -70,7 +70,7 @@ body{
 .playerBox.active{border-color:var(--gold)}
 .score{font-size:42px;font-weight:900}
 .sub{font-weight:800;opacity:.9}
-.checkout{color:#ffd700;font-weight:900}
+.checkout{color:#ffd700;font-weight:900;font-size:14px;margin-top:4px}
 
 /* Cricket Layout B */
 .cricketHeader{
@@ -86,45 +86,45 @@ body{
 .activePlayer{outline:2px solid var(--gold);border-radius:6px}
 .scoreBox{text-align:center;font-weight:900}
 
-/* Tables */
+/* tables */
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{border-bottom:1px solid #333;padding:6px;text-align:center}
 .table th{color:var(--gold)}
 
-/* Mobile */
-@media (max-width:768px){
+/* mobile */
+@media(max-width:768px){
   .score{font-size:34px}
-  .num{padding:12px}
 }
-@media (max-width:480px){
+@media(max-width:480px){
   .marks .mark{height:14px;width:6px}
   .numbers{grid-template-columns:repeat(5,1fr)}
 }
 </style>
 </head>
+
 <body>
 <div class="app">
   <div class="header">
     <div class="status" id="status">Startmenü</div>
     <div style="display:flex;gap:6px">
-      <button onclick="showStats()">📊 Statistiken</button>
-      <button onclick="resetAppState()">⬅ Zurück ins Menü</button>
+      <button onclick="showStats()">📊</button>
+      <button onclick="resetAppState()">⬅ Menü</button>
     </div>
   </div>
 
-  <!-- Start -->
+  <!-- START -->
   <div id="start" class="panel">
     <div class="modes">
-      <button class="mode active" onclick="start501()">501 – 1vs1</button>
-      <button class="mode" onclick="startCricket()">Cricket – 1vs1</button>
-      <button class="mode" onclick="start501Tournament()">501 – Turnier</button>
-      <button class="mode" onclick="startCricketTournament()">Cricket – Turnier</button>
+      <button class="mode active" onclick="start501()">501</button>
+      <button class="mode" onclick="startCricket()">Cricket</button>
+      <button class="mode" onclick="start501Tournament()">501 Turnier</button>
+      <button class="mode" onclick="startCricketTournament()">Cricket Turnier</button>
     </div>
   </div>
 
-  <!-- Tournament Setup -->
+  <!-- SETUP -->
   <div id="setup" class="panel hidden">
-    <div class="sub" style="color:var(--gold)" id="setupTitle"></div>
+    <div class="sub" id="setupTitle" style="color:var(--gold)"></div>
     <label>Spieleranzahl (4–7)</label>
     <input id="pCount" type="number" min="4" max="7" value="4" />
     <div style="margin-top:6px">
@@ -135,23 +135,23 @@ body{
     <button class="btn green" onclick="confirmSetup()">Start</button>
   </div>
 
-  <!-- 501 Game -->
+  <!-- 501 -->
   <div id="game501" class="panel hidden">
     <div class="scores">
       <div class="playerBox active" id="p0">
         <div class="sub" id="p0n"></div>
         <div class="score" id="s0"></div>
-        <div class="checkout" id="c0"></div>
+        <div class="checkout" id="co0"></div>
       </div>
       <div class="playerBox" id="p1">
         <div class="sub" id="p1n"></div>
         <div class="score" id="s1"></div>
-        <div class="checkout" id="c1"></div>
+        <div class="checkout" id="co1"></div>
       </div>
     </div>
   </div>
 
-  <!-- Cricket Game -->
+  <!-- CRICKET -->
   <div id="gameCricket" class="panel hidden">
     <div class="cricketHeader">
       <div id="cn0"></div><div>ZIEL</div><div id="cn1"></div>
@@ -162,7 +162,7 @@ body{
     <div class="cricketGrid" id="cgrid"></div>
   </div>
 
-  <!-- Input -->
+  <!-- INPUT -->
   <div id="input" class="panel hidden">
     <div class="modes">
       <button class="mode active" onclick="setMult(1)">Single</button>
@@ -180,64 +180,73 @@ body{
     </div>
   </div>
 
-  <!-- Tables / Stats -->
+  <!-- STATS -->
   <div id="tablePanel" class="panel hidden"></div>
 </div>
 
 <script>
-/* GLOBAL STATE */
+/* ---------- STATE ---------- */
 let mode=null, submode=null;
-let players=[], turn=0, mult=1, history=[];
+let players=[], turn=0, mult=1;
+let dartsThisTurn=0;
+let history=[];
 let scores501=[501,501];
 let cricket=null;
-let groups=1, tournament=null;
+let legStats=null;
+let tournament=null, groups=1;
 const cricketTargets=[20,19,18,17,16,15,25];
-const statsKey='dart_stats_v1';
+const statsKey='dart_stats_v2';
 
-/* UI BUILD */
+/* ---------- INPUT BUILD ---------- */
 const nums=document.getElementById('nums');
 (function(){
   for(let i=0;i<=20;i++){
-    let b=document.createElement('button');b.className='num';b.textContent=i;
-    b.onclick=()=>throwDart(i*mult);nums.appendChild(b);
+    const b=document.createElement('button');
+    b.className='num'; b.textContent=i;
+    b.onclick=()=>boardThrow(i*mult);
+    nums.appendChild(b);
   }
-  let b25=document.createElement('button');b25.className='num bull';b25.textContent='BULL';
-  b25.onclick=()=>throwDart(25);nums.appendChild(b25);
-  let b50=document.createElement('button');b50.className='num bull';b50.textContent='DBULL';
-  b50.onclick=()=>throwDart(50);nums.appendChild(b50);
+  const b25=document.createElement('button');
+  b25.className='num bull'; b25.textContent='BULL';
+  b25.onclick=()=>boardThrow(25);
+  nums.appendChild(b25);
+  const b50=document.createElement('button');
+  b50.className='num bull'; b50.textContent='DBULL';
+  b50.onclick=()=>boardThrow(50);
+  nums.appendChild(b50);
 })();
 
-/* RESET */
+/* ---------- RESET ---------- */
 function resetAppState(){
-  mode=submode=null; players=[]; turn=0; mult=1; history=[];
-  scores501=[501,501]; cricket=null; tournament=null; groups=1;
-  hideAll(); document.getElementById('start').classList.remove('hidden');
+  mode=submode=null;
+  players=[]; turn=0; mult=1; dartsThisTurn=0; history=[];
+  scores501=[501,501]; cricket=null; tournament=null; groups=1; legStats=null;
+  hideAll();
+  document.getElementById('start').classList.remove('hidden');
   setStatus('Startmenü');
 }
 function hideAll(){
-  ['start','setup','game501','gameCricket','input','tablePanel'].forEach(id=>{
-    document.getElementById(id).classList.add('hidden');
-  });
+  ['start','setup','game501','gameCricket','input','tablePanel']
+    .forEach(id=>document.getElementById(id).classList.add('hidden'));
 }
 function setStatus(t){ document.getElementById('status').textContent=t; }
 
-/* START MODES */
+/* ---------- START MODES ---------- */
 function start501(){
   hideAll(); setStatus('501 – Double Out');
   mode='501'; submode='single';
-  players=['Spieler 1','Spieler 2']; scores501=[501,501]; turn=0; history=[];
-  document.getElementById('game501').classList.remove('hidden');
-  document.getElementById('input').classList.remove('hidden');
-  update501();
+  players=['Spieler 1','Spieler 2'];
+  scores501=[501,501]; turn=0; history=[];
+  legStats=[initLeg(),initLeg()];
+  show501();
 }
 function startCricket(){
   hideAll(); setStatus('Cricket');
   mode='cricket'; submode='single';
-  players=['Spieler 1','Spieler 2']; turn=0; history=[];
+  players=['Spieler 1','Spieler 2'];
   cricket=[initCricket(),initCricket()];
-  document.getElementById('gameCricket').classList.remove('hidden');
-  document.getElementById('input').classList.remove('hidden');
-  buildCricketGrid(); updateCricket();
+  turn=0; history=[];
+  showCricket();
 }
 function start501Tournament(){
   hideAll(); setStatus('501 – Turnier Setup');
@@ -250,7 +259,7 @@ function startCricketTournament(){
   openSetup('Cricket – Turnier Setup');
 }
 
-/* SETUP */
+/* ---------- SETUP ---------- */
 function openSetup(title){
   document.getElementById('setupTitle').textContent=title;
   document.getElementById('setup').classList.remove('hidden');
@@ -265,51 +274,21 @@ function renderNames(){
   const n=+document.getElementById('pCount').value;
   const wrap=document.getElementById('names'); wrap.innerHTML='';
   for(let i=0;i<n;i++){
-    let inp=document.createElement('input'); inp.value='Spieler '+(i+1);
+    const inp=document.createElement('input');
+    inp.value='Spieler '+(i+1);
     wrap.appendChild(inp);
   }
 }
 function confirmSetup(){
   const names=[...document.querySelectorAll('#names input')].map(i=>i.value);
-  tournament={mode,groups,players:names,results:{},stage:'groups'};
-  hideAll();
+  tournament={players:names,idx:0,schedule:buildSchedule(names,groups)};
   startNextTournamentMatch();
 }
 
-/* TOURNAMENT FLOW (simplified but complete) */
-function startNextTournamentMatch(){
-  const ps=tournament.players;
-  if(!tournament.schedule){
-    tournament.schedule=buildSchedule(ps,groups);
-    tournament.idx=0;
-  }
-  if(tournament.idx>=tournament.schedule.length){
-    setStatus(mode==='501'?'501 – Finale':'Cricket – Finale');
-    recordTournamentStats();
-    resetAppState();
-    return;
-  }
-  const [a,b]=tournament.schedule[tournament.idx++];
-  players=[a,b]; turn=0; history=[];
-  if(mode==='501'){
-    scores501=[501,501];
-    hideAll(); setStatus('501 – Gruppenphase');
-    document.getElementById('game501').classList.remove('hidden');
-    document.getElementById('input').classList.remove('hidden');
-    update501();
-  }else{
-    cricket=[initCricket(),initCricket()];
-    hideAll(); setStatus('Cricket – Gruppenphase');
-    document.getElementById('gameCricket').classList.remove('hidden');
-    document.getElementById('input').classList.remove('hidden');
-    buildCricketGrid(); updateCricket();
-  }
-}
-
-/* SCHEDULE */
-function buildSchedule(names,groups){
-  let arr=[];
-  if(groups===1){
+/* ---------- TOURNAMENT ---------- */
+function buildSchedule(names,g){
+  const arr=[];
+  if(g===1){
     for(let i=0;i<names.length;i++)
       for(let j=i+1;j<names.length;j++) arr.push([names[i],names[j]]);
   }else{
@@ -322,34 +301,93 @@ function buildSchedule(names,groups){
   }
   return arr;
 }
+function startNextTournamentMatch(){
+  if(tournament.idx>=tournament.schedule.length){
+    saveStats(mode==='501'?'501-tournament':'cricket-tournament',[]);
+    resetAppState(); return;
+  }
+  players=[...tournament.schedule[tournament.idx++]];
+  turn=0; dartsThisTurn=0; history=[];
+  if(mode==='501'){
+    scores501=[501,501];
+    legStats=[initLeg(),initLeg()];
+    show501();
+  }else{
+    cricket=[initCricket(),initCricket()];
+    showCricket();
+  }
+}
 
-/* INPUT */
+/* ---------- SHOW ---------- */
+function show501(){
+  hideAll();
+  document.getElementById('game501').classList.remove('hidden');
+  document.getElementById('input').classList.remove('hidden');
+  update501();
+}
+function showCricket(){
+  hideAll();
+  document.getElementById('gameCricket').classList.remove('hidden');
+  document.getElementById('input').classList.remove('hidden');
+  buildCricketGrid();
+  updateCricket();
+}
+
+/* ---------- MULT ---------- */
 function setMult(m){
   mult=m;
   document.querySelectorAll('#input .mode').forEach(b=>b.classList.remove('active'));
   document.querySelectorAll('#input .mode')[m-1].classList.add('active');
 }
 function resetMult(){ setMult(1); }
-function manualThrow(){
-  const v=+document.getElementById('manual').value;
-  if(v>=0&&v<=60) throwDart(v);
-  document.getElementById('manual').value='';
-}
+
+/* ---------- LEG / AVERAGE ---------- */
+function initLeg(){ return {points:0,darts:0}; }
+function calcAvg(ls){ return ls.darts?((ls.points/ls.darts)*3).toFixed(1):'0.0'; }
+
+/* ---------- SNAPSHOT ---------- */
 function snapshot(){
-  return JSON.stringify({scores501,cricket,turn});
+  return JSON.stringify({
+    scores501,cricket,turn,mult,dartsThisTurn,legStats
+  });
 }
 function restore(s){
-  const o=JSON.parse(s); scores501=o.scores501; cricket=o.cricket; turn=o.turn;
+  const o=JSON.parse(s);
+  scores501=o.scores501; cricket=o.cricket;
+  turn=o.turn; mult=o.mult; dartsThisTurn=o.dartsThisTurn;
+  legStats=o.legStats;
 }
 
-/* THROW */
-function throwDart(v){
+/* ---------- THROWS ---------- */
+function boardThrow(v){
   history.push(snapshot());
+  processThrow(v,true);
+}
+function manualThrow(){
+  const v=+document.getElementById('manual').value;
+  if(v>=0&&v<=60){
+    history.push(snapshot());
+    processThrow(v,false);
+  }
+  document.getElementById('manual').value='';
+}
+function processThrow(v,isBoard){
   if(mode==='501'){
-    let cur=scores501[turn]-v;
-    if(cur<0 || (cur===0 && v%2!==0)){ restore(history.pop()); nextTurn(); resetMult(); return; }
+    legStats[turn].points+=v;
+    legStats[turn].darts+=1;
+    const cur=scores501[turn]-v;
+    if(cur<0 || (cur===0 && v%2!==0)){
+      restore(history.pop());
+      dartsThisTurn=0;
+      nextTurn(); resetMult(); return;
+    }
     scores501[turn]=cur;
-    if(cur===0){ saveStats('501'); if(submode==='tournament'){ startNextTournamentMatch(); } else { resetAppState(); } return; }
+    if(cur===0){
+      saveStats('501',players);
+      if(submode==='tournament'){ startNextTournamentMatch(); }
+      else resetAppState();
+      return;
+    }
     update501();
   }else{
     const map={15:15,16:16,17:17,18:18,19:19,20:20,25:25,50:25};
@@ -364,23 +402,55 @@ function throwDart(v){
     updateCricket();
     checkCricketEnd();
   }
+
+  if(isBoard){
+    dartsThisTurn++;
+    if(dartsThisTurn>=3){
+      dartsThisTurn=0;
+      nextTurn();
+    }
+  }
   resetMult();
 }
-function nextTurn(){ turn=1-turn; update501(); updateCricket(); }
-function undo(){ if(history.length){ restore(history.pop()); update501(); updateCricket(); } }
 
-/* 501 UI */
+/* ---------- TURN ---------- */
+function nextTurn(){
+  turn=1-turn;
+  dartsThisTurn=0;
+  update501(); updateCricket();
+}
+function undo(){
+  if(history.length){
+    restore(history.pop());
+    update501(); updateCricket();
+  }
+}
+
+/* ---------- 501 UI ---------- */
+function getCheckout(score){
+  if(score>170 || score<=1) return '';
+  if(score===170) return 'T20 T20 D25';
+  if(score===167) return 'T20 T19 D25';
+  if(score===164) return 'T20 T18 D25';
+  if(score<=40 && score%2===0) return 'D'+(score/2);
+  if(score<=50) return score+' D'+((score-50)/2||25);
+  return '';
+}
 function update501(){
   if(mode!=='501') return;
-  document.getElementById('p0n').textContent=players[0];
-  document.getElementById('p1n').textContent=players[1];
+  document.getElementById('p0n').textContent=
+    players[0]+' (Ø '+calcAvg(legStats[0])+')';
+  document.getElementById('p1n').textContent=
+    players[1]+' (Ø '+calcAvg(legStats[1])+')';
   document.getElementById('s0').textContent=scores501[0];
   document.getElementById('s1').textContent=scores501[1];
+  document.getElementById('co0').textContent=getCheckout(scores501[0]);
+  document.getElementById('co1').textContent=getCheckout(scores501[1]);
   document.getElementById('p0').classList.toggle('active',turn===0);
   document.getElementById('p1').classList.toggle('active',turn===1);
 }
 
-/* CRICKET */
+/* ---------- CRICKET ---------- */
 function initCricket(){
   return {pts:0,m:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}};
 }
@@ -414,28 +484,27 @@ function updateCricket(){
 function checkCricketEnd(){
   const allClosed=cricketTargets.every(t=>cricket[0].m[t]>=3 && cricket[1].m[t]>=3);
   if(allClosed && cricket[0].pts!==cricket[1].pts){
-    saveStats('cricket');
-    if(submode==='tournament'){ startNextTournamentMatch(); } else { resetAppState(); }
+    saveStats('cricket',players);
+    if(submode==='tournament') startNextTournamentMatch();
+    else resetAppState();
   }
 }
 
-/* STATS */
+/* ---------- STATS ---------- */
 function loadStats(){ return JSON.parse(localStorage.getItem(statsKey)||'[]'); }
-function saveStats(type){
-  const stats=loadStats();
-  stats.push({date:new Date().toISOString(),type,players:[...players]});
-  localStorage.setItem(statsKey,JSON.stringify(stats));
-}
-function recordTournamentStats(){
-  saveStats(mode==='501'?'501-tournament':'cricket-tournament');
+function saveStats(type,ps){
+  const s=loadStats();
+  s.push({date:new Date().toISOString(),type,players:ps});
+  localStorage.setItem(statsKey,JSON.stringify(s));
 }
 function showStats(){
-  hideAll(); setStatus('Statistiken & Historie');
-  const panel=document.getElementById('tablePanel'); panel.classList.remove('hidden');
+  hideAll(); setStatus('Statistiken');
+  const panel=document.getElementById('tablePanel');
+  panel.classList.remove('hidden');
   const data=loadStats();
   let html='<table class="table"><tr><th>Datum</th><th>Typ</th><th>Spieler</th></tr>';
   data.forEach(d=>{
-    html+=`<tr><td>${new Date(d.date).toLocaleString()}</td><td>${d.type}</td><td>${d.players.join(' vs ')}</td></tr>`;
+    html+=`<tr><td>${new Date(d.date).toLocaleString()}</td><td>${d.type}</td><td>${(d.players||[]).join(' vs ')}</td></tr>`;
   });
   html+='</table><button class="btn red" onclick="clearStats()">Statistiken löschen</button>';
   panel.innerHTML=html;
