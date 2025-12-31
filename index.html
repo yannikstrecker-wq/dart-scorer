@@ -1,611 +1,475 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Dart Web App – Final</title>
-
-<style>
-:root{
-  --green:#1e7f4f;
-  --red:#b8322a;
-  --gold:#d4af37;
-  --bg:#050806;
-  --panel:#111;
-  --text:#f5f5f5;
-}
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:radial-gradient(circle at top,#1b5e3a 0%,var(--bg) 70%);
-  font-family:system-ui;
-  color:var(--text);
-  padding:8px;
-}
-.app{max-width:1200px;margin:auto}
-
-/* HEADER */
-.header{
-  display:flex;align-items:center;justify-content:space-between;
-  border:2px solid var(--gold);border-radius:14px;
-  padding:8px;background:#000;margin-bottom:8px
-}
-.header .status{color:var(--gold);font-weight:900}
-.header button{
-  background:#000;color:var(--gold);
-  border:2px solid var(--gold);
-  border-radius:10px;padding:6px 10px;font-weight:900
-}
-
-/* PANELS */
-.panel{background:var(--panel);padding:10px;border-radius:14px;margin-bottom:8px}
-.hidden{display:none}
-
-/* BUTTONS */
-.modes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
-.mode{
-  padding:10px;font-weight:900;border-radius:10px;
-  border:2px solid #0f5d35;background:#000;color:#eee
-}
-.mode.active{background:var(--gold);color:#000}
-
-/* INPUT */
-.numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.num{
-  padding:14px;font-size:18px;font-weight:900;
-  background:#000;color:#fff;
-  border:2px solid #0f5d35;border-radius:10px
-}
-.bull{color:#ffd700}
-.quickInput{display:flex;gap:6px;margin-top:6px}
-.quickInput input{
-  flex:1;padding:10px;border-radius:8px;border:2px solid #333;
-  background:#000;color:#fff;text-align:center;font-weight:900
-}
-.quickInput button{
-  padding:10px 14px;border-radius:8px;border:none;
-  font-weight:900;background:var(--gold)
-}
-.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
-.btn{padding:14px;font-weight:900;border-radius:12px;border:none}
-.green{background:var(--green);color:#000}
-.red{background:var(--red);color:#fff}
-
-/* 501 */
-.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.playerBox{
-  background:#000;border:2px solid #0f5d35;
-  border-radius:12px;padding:10px
-}
-.playerBox.active{border-color:var(--gold)}
-.score{font-size:42px;font-weight:900}
-.sub{font-weight:800;opacity:.9}
-.avg{font-size:14px;color:#ffd700;margin-top:2px}
-.checkout{color:#ffd700;font-weight:900;font-size:14px;margin-top:4px}
-
-/* CRICKET */
-.cricketHeader{
-  display:grid;grid-template-columns:1fr auto 1fr;
-  gap:6px;text-align:center;margin-bottom:4px
-}
-.cricketGrid{
-  display:grid;grid-template-columns:1fr 60px 1fr;
-  row-gap:6px;align-items:center
-}
-.center{font-weight:900;text-align:center}
-.marks{display:flex;justify-content:center;gap:4px}
-.mark{width:8px;height:18px;background:#333;border-radius:3px}
-.mark.on{background:var(--gold)}
-.activePlayer{outline:2px solid var(--gold);border-radius:6px}
-.scoreBox{text-align:center;font-weight:900}
-
-/* TABLE */
-.table{width:100%;border-collapse:collapse;margin-top:6px}
-.table th,.table td{
-  border-bottom:1px solid #333;padding:6px;text-align:center
-}
-.table th{color:var(--gold)}
-
-/* MODAL */
-.modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.6);
-  display:flex;align-items:center;justify-content:center;z-index:50
-}
-.modal.hidden{display:none;pointer-events:none}
-.modal .box{
-  background:#000;border:2px solid var(--gold);
-  border-radius:14px;max-width:900px;width:95%;
-  max-height:90vh;overflow:auto;padding:10px
-}
-.modal .close{
-  float:right;background:#000;color:var(--gold);
-  border:2px solid var(--gold);border-radius:8px;
-  padding:4px 8px;font-weight:900
-}
-
-/* MOBILE */
-@media(max-width:768px){.score{font-size:34px}}
-@media(max-width:480px){
-  .marks .mark{height:14px;width:6px}
-  .numbers{grid-template-columns:repeat(5,1fr)}
-}
-</style>
+    <meta charset="UTF-8">
+    <title>Dart Scoreboard</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        /* Basic styling and responsive design */
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: flex-start;
+        }
+        #menu, #statsArea, #gameArea {
+            width: 100%;
+            max-width: 800px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        h1 { text-align: center; }
+        button {
+            min-width: 100px;
+            min-height: 44px;
+            margin: 5px;
+            font-size: 16px;
+            padding: 10px;
+        }
+        /* Hide sections by default */
+        #gameArea, #statsArea, #popup {
+            display: none;
+        }
+        .hidden { display: none; }
+        /* Scoreboard styling */
+        #scoreboard {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+        }
+        #scoreboard th, #scoreboard td {
+            border: 1px solid #aaa;
+            padding: 5px;
+            text-align: center;
+        }
+        #scoreboard th {
+            background: #eee;
+        }
+        /* Input area styling */
+        #inputArea {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin: 10px 0;
+        }
+        #inputArea button, #inputArea input[type=button] {
+            width: 60px;
+            height: 44px;
+            margin: 3px;
+            font-size: 16px;
+        }
+        #inputField {
+            width: 60px;
+            height: 44px;
+            font-size: 16px;
+            margin: 3px;
+        }
+        /* Popup styling */
+        #popup {
+            position: fixed;
+            top:0; left:0; right:0; bottom:0;
+            background: rgba(0,0,0,0.7);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            z-index: 1000;
+        }
+        #popupContent {
+            background: #333;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+        /* Mobile responsiveness: no scrollbars, ensure content fits */
+        @media (max-width: 600px) {
+            #scoreboard th, #scoreboard td {
+                font-size: 14px;
+                padding: 3px;
+            }
+            #inputArea button {
+                width: 44px; height: 44px; font-size: 14px;
+            }
+        }
+    </style>
 </head>
-
 <body>
-<div class="app">
-  <div class="header">
-    <div class="status" id="status">Startmenü</div>
-    <div style="display:flex;gap:6px">
-      <button id="matchesBtn" class="hidden" onclick="openMatches()">📋 Matches</button>
-      <button onclick="showStats()">📊</button>
-      <button onclick="resetAppState()">⬅ Menü</button>
+    <!-- Menu -->
+    <div id="menu">
+        <h1>Dart-Spiel</h1>
+        <button id="btn501Single">501 Einzelspiel</button>
+        <button id="btn501Tournament">501 Turnier</button>
+        <button id="btnCricketSingle">Cricket Einzelspiel</button>
+        <button id="btnCricketTournament">Cricket Turnier</button>
+        <button id="btnStats">Statistiken & Historie</button>
     </div>
-  </div>
-
-  <!-- START -->
-  <div id="start" class="panel">
-    <div class="modes">
-      <button class="mode active" onclick="start501()">501</button>
-      <button class="mode" onclick="startCricket()">Cricket</button>
-      <button class="mode" onclick="start501Tournament()">501 Turnier</button>
-      <button class="mode" onclick="startCricketTournament()">Cricket Turnier</button>
+    
+    <!-- Game Area -->
+    <div id="gameArea">
+        <!-- Back to menu -->
+        <button id="btnBackMenu">Zurück ins Menü</button>
+        <h2 id="gameTitle"></h2>
+        <!-- Player Table -->
+        <table id="scoreboard">
+            <thead id="scoreboardHeader"></thead>
+            <tbody id="scoreboardBody"></tbody>
+        </table>
+        <!-- Live info -->
+        <div id="liveInfo" style="margin-bottom:10px;"></div>
+        <!-- Input Area -->
+        <div id="inputArea">
+            <!-- Number Buttons 0-20 -->
+            <div id="numberButtons">
+            </div>
+            <!-- Bull & Double Bull -->
+            <button data-value="25">Bull 25</button>
+            <button data-value="50">DBull 50</button>
+            <!-- Multiplier Buttons -->
+            <button id="btnSingle" data-mult="1">S</button>
+            <button id="btnDouble" data-mult="2">D</button>
+            <button id="btnTriple" data-mult="3">T</button>
+            <!-- Numeric Input field -->
+            <input type="number" id="inputField" min="0" max="60" placeholder="0-60">
+            <input type="button" id="btnOK" value="OK">
+            <!-- Undo / Next / Prev -->
+            <button id="btnPrevPlayer">«</button>
+            <button id="btnNextPlayer">»</button>
+            <button id="btnUndo">Undo</button>
+            <button id="btnReset">Reset</button>
+        </div>
     </div>
-  </div>
-
-  <!-- SETUP -->
-  <div id="setup" class="panel hidden">
-    <div class="sub" style="color:var(--gold)">Turnier – Setup</div>
-    <div id="liveTables"></div>
-    <label>Spieleranzahl (4–7)</label>
-    <input id="pCount" type="number" min="4" max="7" value="4"/>
-    <div style="margin-top:6px">
-      <button class="mode active" id="g1" onclick="setGroups(1)">1 Gruppe</button>
-      <button class="mode" id="g2" onclick="setGroups(2)">2 Gruppen</button>
+    
+    <!-- Tournament Popup / Next Match -->
+    <div id="popup">
+        <div id="popupContent">
+            <h3 id="popupTitle"></h3>
+            <div id="popupMessage"></div>
+            <button id="popupNext">Weiter</button>
+        </div>
     </div>
-    <div id="names" style="margin-top:8px"></div>
-    <button class="btn green" onclick="confirmSetup()">Start</button>
-  </div>
-
-  <!-- 501 -->
-  <div id="game501" class="panel hidden">
-    <div class="scores">
-      <div class="playerBox active" id="p0">
-        <div class="sub" id="p0n"></div>
-        <div class="avg" id="avg0"></div>
-        <div class="score" id="s0"></div>
-        <div class="checkout" id="co0"></div>
-      </div>
-      <div class="playerBox" id="p1">
-        <div class="sub" id="p1n"></div>
-        <div class="avg" id="avg1"></div>
-        <div class="score" id="s1"></div>
-        <div class="checkout" id="co1"></div>
-      </div>
+    
+    <!-- Statistics & History Area -->
+    <div id="statsArea">
+        <h2>Statistiken & Historie</h2>
+        <button id="btnBackMenu2">Zurück ins Menü</button>
+        <div>
+            <label for="filterType">Spieltyp:</label>
+            <select id="filterType">
+                <option value="">Alle</option>
+                <option value="501 Einzel">501 Einzel</option>
+                <option value="501 Turnier">501 Turnier</option>
+                <option value="Cricket Einzel">Cricket Einzel</option>
+                <option value="Cricket Turnier">Cricket Turnier</option>
+            </select>
+            <label for="filterPlayer">Spielername:</label>
+            <input type="text" id="filterPlayer" placeholder="Name">
+            <button id="btnFilter">Filter</button>
+            <button id="btnClearStats">Alle löschen</button>
+        </div>
+        <table id="statsTable">
+            <thead>
+                <tr><th>Typ</th><th>Spieler</th><th>Ergebnis</th><th>Average</th><th>Rang</th><th>Aktion</th></tr>
+            </thead>
+            <tbody id="statsBody"></tbody>
+        </table>
     </div>
-  </div>
-
-  <!-- CRICKET -->
-  <div id="gameCricket" class="panel hidden">
-    <div class="cricketHeader">
-      <div id="cn0"></div><div>ZIEL</div><div id="cn1"></div>
-    </div>
-    <div class="cricketHeader">
-      <div id="cp0" class="scoreBox"></div><div></div><div id="cp1" class="scoreBox"></div>
-    </div>
-    <div class="cricketGrid" id="cgrid"></div>
-  </div>
-
-  <!-- INPUT -->
-  <div id="input" class="panel hidden">
-    <div class="modes">
-      <button class="mode active" onclick="setMult(1)">Single</button>
-      <button class="mode" onclick="setMult(2)">Double</button>
-      <button class="mode" onclick="setMult(3)">Triple</button>
-    </div>
-    <div class="numbers" id="nums"></div>
-    <div class="quickInput">
-      <input id="manual" type="number" min="0" max="60" placeholder="Wurf"/>
-      <button onclick="manualThrow()">OK</button>
-    </div>
-    <div class="actions">
-      <button class="btn red" onclick="undo()">Undo</button>
-      <button class="btn green" onclick="nextTurn()">Weiter</button>
-    </div>
-  </div>
-
-  <!-- STATS -->
-  <div id="tablePanel" class="panel hidden"></div>
-</div>
-
-<!-- MODAL -->
-<div id="modal" class="modal hidden">
-  <div class="box">
-    <button class="close" onclick="closeModal()">✖</button>
-    <h3>Turnier – Matches</h3>
-    <div id="modalContent"></div>
-  </div>
-</div>
-
-<script>
-/* =======================
-   STATE
-======================= */
-let mode=null, submode=null, groups=1;
-let players=[], turn=0, mult=1, dartsThisTurn=0;
-let history=[];
-let scores501=[501,501], cricket=null;
-let legStats=null;
-let tournament=null;
-
-const cricketTargets=[20,19,18,17,16,15,25];
-
-/* =======================
-   INPUT BUILD
-======================= */
-const nums=document.getElementById('nums');
-(function(){
-  for(let i=0;i<=20;i++){
-    const b=document.createElement('button');
-    b.className='num'; b.textContent=i;
-    b.onclick=()=>boardThrow(i*mult);
-    nums.appendChild(b);
-  }
-  const bull=document.createElement('button');
-  bull.className='num bull'; bull.textContent='BULL';
-  bull.onclick=()=>boardThrow(25);
-  nums.appendChild(bull);
-  const dbull=document.createElement('button');
-  dbull.className='num bull'; dbull.textContent='DBULL';
-  dbull.onclick=()=>boardThrow(50);
-  nums.appendChild(dbull);
-})();
-
-/* =======================
-   RESET / NAV
-======================= */
-function hideAll(){
-  ['start','setup','game501','gameCricket','input','tablePanel']
-    .forEach(id=>document.getElementById(id).classList.add('hidden'));
-}
-function setStatus(t){document.getElementById('status').textContent=t}
-
-function resetAppState(){
-  closeModal();
-  document.getElementById('matchesBtn').classList.add('hidden');
-  mode=submode=null;groups=1;
-  players=[];turn=0;mult=1;dartsThisTurn=0;
-  history=[];scores501=[501,501];cricket=null;
-  legStats=null;tournament=null;
-  hideAll();
-  document.getElementById('start').classList.remove('hidden');
-  setStatus('Startmenü');
-}
-
-/* =======================
-   START MODES
-======================= */
-function start501(){
-  hideAll();setStatus('501 – Double Out');
-  mode='501';submode='single';
-  players=['Spieler 1','Spieler 2'];
-  scores501=[501,501];
-  legStats=[initLeg(),initLeg()];
-  turn=0;
-  show501();
-}
-function startCricket(){
-  hideAll();setStatus('Cricket');
-  mode='cricket';submode='single';
-  players=['Spieler 1','Spieler 2'];
-  cricket=[initCricket(),initCricket()];
-  turn=0;
-  showCricket();
-}
-function start501Tournament(){
-  hideAll();setStatus('501 – Turnier Setup');
-  document.getElementById('matchesBtn').classList.remove('hidden');
-  mode='501';submode='tournament';
-  openSetup();
-}
-function startCricketTournament(){
-  hideAll();setStatus('Cricket – Turnier Setup');
-  document.getElementById('matchesBtn').classList.remove('hidden');
-  mode='cricket';submode='tournament';
-  openSetup();
-}
-
-/* =======================
-   SETUP / TOURNAMENT
-======================= */
-function openSetup(){
-  document.getElementById('setup').classList.remove('hidden');
-  renderNames();
-  renderLiveTables();
-}
-function setGroups(g){
-  groups=g;
-  document.getElementById('g1').classList.toggle('active',g===1);
-  document.getElementById('g2').classList.toggle('active',g===2);
-}
-function renderNames(){
-  const n=+document.getElementById('pCount').value;
-  const wrap=document.getElementById('names');
-  wrap.innerHTML='';
-  for(let i=0;i<n;i++){
-    const inp=document.createElement('input');
-    inp.value='Spieler '+(i+1);
-    wrap.appendChild(inp);
-  }
-}
-function confirmSetup(){
-  const names=[...document.querySelectorAll('#names input')].map(i=>i.value);
-  tournament={
-    players:names,
-    stage:'groups',
-    groups,
-    matches:[],
-    table:{}
-  };
-  names.forEach(n=>tournament.table[n]={p:0,w:0,l:0,pts:0});
-  tournament.matches=buildGroupMatches(names,groups);
-  startNextTournamentMatch();
-  renderLiveTables();
-}
-function buildGroupMatches(names,g){
-  const arr=[];
-  if(g===1){
-    for(let i=0;i<names.length;i++)
-      for(let j=i+1;j<names.length;j++)
-        arr.push({a:names[i],b:names[j],done:false,res:''});
-  }else{
-    const mid=Math.ceil(names.length/2);
-    const A=names.slice(0,mid),B=names.slice(mid);
-    [A,B].forEach(G=>{
-      for(let i=0;i<G.length;i++)
-        for(let j=i+1;j<G.length;j++)
-          arr.push({a:G[i],b:G[j],done:false,res:''});
+    
+    <script>
+    // Data structures
+    let gameType = ""; // "501 Einzel", "501 Turnier", "Cricket Einzel", "Cricket Turnier"
+    let players = []; // [{name, score, shots:[], avg, closed: {...}}, ...]
+    let currentPlayerIndex = 0;
+    let currentThrowCount = 0;
+    let legThrows = []; // history of throws in current leg
+    let multiplier = 1;
+    let numberButtonsContainer = document.getElementById("numberButtons");
+    let popup = document.getElementById("popup");
+    
+    // Populate number buttons 0-20
+    for (let i = 0; i <= 20; i++) {
+        let btn = document.createElement("button");
+        btn.textContent = i;
+        btn.dataset.value = i;
+        numberButtonsContainer.appendChild(btn);
+    }
+    
+    // Utility functions
+    function showMenu() {
+        document.getElementById("menu").style.display = "block";
+        document.getElementById("gameArea").style.display = "none";
+        document.getElementById("statsArea").style.display = "none";
+    }
+    function showGame(type) {
+        gameType = type;
+        players = [];
+        currentPlayerIndex = 0;
+        legThrows = [];
+        document.getElementById("menu").style.display = "none";
+        document.getElementById("statsArea").style.display = "none";
+        document.getElementById("gameArea").style.display = "block";
+        document.getElementById("gameTitle").textContent = type;
+        // Prompt for number of players and names
+        let numPlayers = 2;
+        if (type.includes("Turnier")) {
+            numPlayers = parseInt(prompt("Anzahl der Spieler (4-7):", "4") || "4");
+            if (isNaN(numPlayers) || numPlayers < 4) numPlayers = 4;
+            if (numPlayers > 7) numPlayers = 7;
+        } else {
+            numPlayers = 2;
+        }
+        players = [];
+        for (let i = 0; i < numPlayers; i++) {
+            let name = prompt("Name Spieler " + (i+1) + ":", "Spieler " + (i+1));
+            players.push({name: name || ("Spieler " + (i+1)), score: (type.startsWith("501")? 501 : 0), shots: [], avg: 0, closed: {15:0,16:0,17:0,18:0,19:0,20:0,25:0}});
+        }
+        // Initialize scores
+        if (type.startsWith("Cricket")) {
+            players.forEach(p => p.score = 0);
+        }
+        updateScoreboard();
+    }
+    function updateScoreboard() {
+        let header = document.getElementById("scoreboardHeader");
+        let body = document.getElementById("scoreboardBody");
+        header.innerHTML = "";
+        body.innerHTML = "";
+        // Header row
+        let row = document.createElement("tr");
+        players.forEach((p, idx) => {
+            let th = document.createElement("th");
+            th.textContent = p.name;
+            if (idx === currentPlayerIndex) th.style.background = "#ddf";
+            row.appendChild(th);
+        });
+        header.appendChild(row);
+        // Score row
+        let scoreRow = document.createElement("tr");
+        players.forEach(p => {
+            let td = document.createElement("td");
+            td.textContent = p.score;
+            scoreRow.appendChild(td);
+        });
+        body.appendChild(scoreRow);
+        // Additional info rows for averages or closed counts
+        if (gameType.startsWith("501")) {
+            let avgRow = document.createElement("tr");
+            players.forEach(p => {
+                let td = document.createElement("td");
+                td.textContent = p.avg.toFixed(2);
+                avgRow.appendChild(td);
+            });
+            body.appendChild(avgRow);
+        } else if (gameType.startsWith("Cricket")) {
+            // show closed numbers counts
+            for (let num of [20,19,18,17,16,15,25]) {
+                let row = document.createElement("tr");
+                players.forEach(p => {
+                    let td = document.createElement("td");
+                    td.textContent = p.closed[num] || 0;
+                    row.appendChild(td);
+                });
+                body.appendChild(row);
+            }
+        }
+    }
+    function nextPlayer(manual=false) {
+        currentThrowCount = 0;
+        currentPlayerIndex = (currentPlayerIndex + 1) % players.length;
+        updateScoreboard();
+    }
+    function prevPlayer() {
+        currentThrowCount = 0;
+        currentPlayerIndex = (currentPlayerIndex - 1 + players.length) % players.length;
+        updateScoreboard();
+    }
+    function checkoutSuggestions(score) {
+        // Simplistic double-out suggestions up to 100
+        let suggestions = [];
+        for (let d = 2; d <= 50; d+=2) {
+            if (d > score) break;
+            let rem = score - d;
+            if (rem === 0) {
+                suggestions.push("D" + (d/2));
+            } else if (rem <= 60 && rem > 0) {
+                let m = [3,2,1].find(m=>rem % m === 0 && rem/m <= 20);
+                if (m) {
+                    let n = rem / m;
+                    let prefix = (m===3?"T":m===2?"D":"S");
+                    suggestions.push(prefix + n + "+D" + (d/2));
+                }
+            }
+        }
+        return suggestions;
+    }
+    function recordThrow(value) {
+        let player = players[currentPlayerIndex];
+        legThrows.push({player: player.name, value: value, multiplier: multiplier});
+        player.shots.push(value * multiplier);
+        player.avg = player.shots.reduce((a,b)=>a+b,0) / (player.shots.length || 1) * 3; // average per 3 darts
+        if (gameType.startsWith("501")) {
+            player.score -= value * multiplier;
+            if (player.score < 0) {
+                player.score += value * multiplier;
+            } else {
+                if (player.score === 0) {
+                    if (multiplier === 2 || value === 50) {
+                        endLeg(player.name);
+                    } else {
+                        player.score = 1;
+                    }
+                }
+            }
+        } else if (gameType.startsWith("Cricket")) {
+            let num = value;
+            if (multiplier > 0 && players[currentPlayerIndex].closed[num] < 3 && ([20,19,18,17,16,15,25].includes(num))) {
+                players[currentPlayerIndex].closed[num] = Math.min(3, players[currentPlayerIndex].closed[num] + multiplier);
+            } else if (players[currentPlayerIndex].closed[num] >= 3) {
+                for (let i = 0; i < multiplier; i++) {
+                    let allClosed = players.every(p => p.closed[num] >= 3);
+                    if (!allClosed) players[currentPlayerIndex].score += num;
+                }
+            }
+            let allClosedAll = [20,19,18,17,16,15,25].every(n => players[currentPlayerIndex].closed[n] >= 3);
+            if (allClosedAll) {
+                let maxScore = Math.max(...players.map(p => p.score));
+                if (players[currentPlayerIndex].score >= maxScore) {
+                    endLeg(player.name);
+                }
+            }
+        }
+        updateScoreboard();
+        currentThrowCount++;
+        if (currentThrowCount >= 3) nextPlayer();
+    }
+    function endLeg(winner) {
+        alert("Leg gewonnen von " + winner);
+        if (gameType.includes("Turnier")) {
+            document.getElementById("popupTitle").textContent = "Match beendet";
+            document.getElementById("popupMessage").textContent = "Sieger: " + winner;
+            popup.style.display = "flex";
+        } else {
+            players.forEach(p => {
+                p.score = (gameType.startsWith("501") ? 501 : 0);
+                p.shots = [];
+                p.avg = 0;
+                if (gameType.startsWith("Cricket")) {
+                    for (let n in p.closed) p.closed[n] = 0;
+                }
+            });
+            currentPlayerIndex = 0;
+            updateScoreboard();
+        }
+    }
+    // Save stats to localStorage
+    function saveStats() {
+        let stats = JSON.parse(localStorage.getItem("dartStats")||"[]");
+        let entry = {
+            type: gameType,
+            players: players.map(p=>p.name).join(", "),
+            average: players.map(p=>p.avg.toFixed(2)).join(", "),
+            placement: (gameType.includes("Turnier") ? "tbd" : players[0].score === 0 ? "Sieg" : "")
+        };
+        stats.push(entry);
+        localStorage.setItem("dartStats", JSON.stringify(stats));
+    }
+    function loadStats() {
+        let stats = JSON.parse(localStorage.getItem("dartStats")||"[]");
+        return stats;
+    }
+    function showStats() {
+        document.getElementById("menu").style.display = "none";
+        document.getElementById("gameArea").style.display = "none";
+        document.getElementById("statsArea").style.display = "block";
+        updateStatsTable();
+    }
+    function updateStatsTable() {
+        let stats = loadStats();
+        let tbody = document.getElementById("statsBody");
+        tbody.innerHTML = "";
+        let filterType = document.getElementById("filterType").value;
+        let filterPlayer = document.getElementById("filterPlayer").value.toLowerCase();
+        stats.forEach((s, idx) => {
+            if ((filterType === "" || s.type === filterType) &&
+                (filterPlayer === "" || s.players.toLowerCase().includes(filterPlayer))) {
+                let tr = document.createElement("tr");
+                tr.innerHTML = "<td>"+s.type+"</td><td>"+s.players+"</td><td>"+s.average+"</td><td>"+(s.placement||"")+"</td><td><button data-index='"+idx+"' class='delStat'>L\u00f6schen</button></td>";
+                tbody.appendChild(tr);
+            }
+        });
+        document.querySelectorAll(".delStat").forEach(btn=>{
+            btn.onclick = function(){
+                let stats = loadStats();
+                stats.splice(this.dataset.index,1);
+                localStorage.setItem("dartStats", JSON.stringify(stats));
+                updateStatsTable();
+            };
+        });
+    }
+    function clearStats() {
+        localStorage.removeItem("dartStats");
+        updateStatsTable();
+    }
+    // Event listeners
+    document.getElementById("btn501Single").onclick = () => showGame("501 Einzel");
+    document.getElementById("btn501Tournament").onclick = () => showGame("501 Turnier");
+    document.getElementById("btnCricketSingle").onclick = () => showGame("Cricket Einzel");
+    document.getElementById("btnCricketTournament").onclick = () => showGame("Cricket Turnier");
+    document.getElementById("btnStats").onclick = showStats;
+    document.getElementById("btnBackMenu").onclick = showMenu;
+    document.getElementById("btnBackMenu2").onclick = showMenu;
+    document.getElementById("btnPrevPlayer").onclick = prevPlayer;
+    document.getElementById("btnNextPlayer").onclick = () => nextPlayer(true);
+    document.getElementById("btnUndo").onclick = () => {
+        let throwData = legThrows.pop();
+        if (throwData) {
+            let player = players.find(p => p.name===throwData.player);
+            if (player) {
+                let points = throwData.value * throwData.multiplier;
+                player.score += points;
+                player.shots.pop();
+                player.avg = player.shots.length? player.shots.reduce((a,b)=>a+b)/player.shots.length * 3 : 0;
+                currentPlayerIndex = players.indexOf(player);
+                currentThrowCount = Math.max(0, currentThrowCount-1);
+                updateScoreboard();
+            }
+        }
+    };
+    document.getElementById("btnReset").onclick = () => {
+        if (confirm("Neustart?")) {
+            showGame(gameType);
+        }
+    };
+    document.getElementById("btnSingle").onclick = () => { multiplier = 1; };
+    document.getElementById("btnDouble").onclick = () => { multiplier = 2; };
+    document.getElementById("btnTriple").onclick = () => { multiplier = 3; };
+    document.getElementById("btnOK").onclick = () => {
+        let val = parseInt(document.getElementById("inputField").value);
+        if (!isNaN(val) && val>=0 && val<=60) {
+            recordThrow(val);
+        }
+        document.getElementById("inputField").value = "";
+    };
+    // Number buttons
+    document.querySelectorAll('#numberButtons button, [data-value]').forEach(btn => {
+        btn.onclick = () => {
+            let val = parseInt(btn.dataset.value);
+            recordThrow(val);
+        }
     });
-  }
-  return arr;
-}
-
-/* =======================
-   TOURNAMENT FLOW
-======================= */
-function startNextTournamentMatch(){
-  const next=tournament.matches.find(m=>!m.done);
-  if(!next){
-    if(tournament.stage==='groups'){
-      buildKO();
-      return;
-    }
-    resetAppState();
-    return;
-  }
-  players=[next.a,next.b];
-  turn=0;dartsThisTurn=0;history=[];
-  if(mode==='501'){
-    scores501=[501,501];
-    legStats=[initLeg(),initLeg()];
-    show501();
-  }else{
-    cricket=[initCricket(),initCricket()];
-    showCricket();
-  }
-}
-function buildKO(){
-  const ranked=Object.entries(tournament.table)
-    .sort((a,b)=>b[1].pts-a[1].pts)
-    .map(e=>e[0]);
-  tournament.stage='ko';
-  tournament.matches=[
-    {a:ranked[0],b:ranked[3],round:'HF',done:false,res:''},
-    {a:ranked[1],b:ranked[2],round:'HF',done:false,res:''}
-  ];
-  startNextTournamentMatch();
-}
-
-/* =======================
-   SHOW
-======================= */
-function show501(){
-  hideAll();
-  document.getElementById('game501').classList.remove('hidden');
-  document.getElementById('input').classList.remove('hidden');
-  update501();
-}
-function showCricket(){
-  hideAll();
-  document.getElementById('gameCricket').classList.remove('hidden');
-  document.getElementById('input').classList.remove('hidden');
-  buildCricketGrid();
-  updateCricket();
-}
-
-/* =======================
-   INPUT / GAME
-======================= */
-function setMult(m){
-  mult=m;
-  document.querySelectorAll('#input .mode').forEach(b=>b.classList.remove('active'));
-  document.querySelectorAll('#input .mode')[m-1].classList.add('active');
-}
-function resetMult(){setMult(1)}
-
-function initLeg(){return{points:0,darts:0}}
-function avg(ls){return ls.darts?((ls.points/ls.darts)*3).toFixed(1):'0.0'}
-
-function boardThrow(v){history.push(snapshot());processThrow(v,true)}
-function manualThrow(){
-  const v=+document.getElementById('manual').value;
-  if(v>=0&&v<=60){history.push(snapshot());processThrow(v,false)}
-  document.getElementById('manual').value='';
-}
-function snapshot(){
-  return JSON.stringify({scores501,cricket,turn,mult,dartsThisTurn,legStats});
-}
-function restore(s){
-  const o=JSON.parse(s);
-  scores501=o.scores501;cricket=o.cricket;
-  turn=o.turn;mult=o.mult;
-  dartsThisTurn=o.dartsThisTurn;legStats=o.legStats;
-}
-function undo(){
-  if(history.length){
-    restore(history.pop());
-    update501();updateCricket();
-  }
-}
-function nextTurn(){
-  turn=1-turn;
-  dartsThisTurn=0;
-  update501();updateCricket();
-}
-
-function processThrow(v,isBoard){
-  if(mode==='501'){
-    legStats[turn].points+=v;
-    legStats[turn].darts++;
-    const cur=scores501[turn]-v;
-    if(cur<0||(cur===0&&v%2!==0)){
-      restore(history.pop());
-      nextTurn();resetMult();return;
-    }
-    scores501[turn]=cur;
-    if(cur===0){
-      const winner=players[turn];
-      tournament && updateTable(winner);
-      markMatch(winner,'1-0');
-      startNextTournamentMatch();
-      return;
-    }
-    update501();
-  }else{
-    const map={15:15,16:16,17:17,18:18,19:19,20:20,25:25,50:25};
-    const base=(v===50?25:v/mult);
-    const k=map[base];
-    if(k){
-      for(let i=0;i<mult;i++){
-        if(cricket[turn].m[k]<3)cricket[turn].m[k]++;
-        else if(cricket[1-turn].m[k]<3)cricket[turn].pts+=k;
-      }
-    }
-    updateCricket();
-  }
-  if(isBoard){
-    dartsThisTurn++;
-    if(dartsThisTurn>=3)nextTurn();
-  }
-  resetMult();
-}
-
-/* =======================
-   UI UPDATE
-======================= */
-function getCheckout(score){
-  if(score>170||score<=1)return'';
-  if(score===170)return'T20 T20 D25';
-  if(score===167)return'T20 T19 D25';
-  if(score===164)return'T20 T18 D25';
-  if(score<=40&&score%2===0)return'D'+(score/2);
-  return'';
-}
-function update501(){
-  if(mode!=='501')return;
-  document.getElementById('p0n').textContent=players[0];
-  document.getElementById('p1n').textContent=players[1];
-  document.getElementById('avg0').textContent='Ø '+avg(legStats[0]);
-  document.getElementById('avg1').textContent='Ø '+avg(legStats[1]);
-  document.getElementById('s0').textContent=scores501[0];
-  document.getElementById('s1').textContent=scores501[1];
-  document.getElementById('co0').textContent=getCheckout(scores501[0]);
-  document.getElementById('co1').textContent=getCheckout(scores501[1]);
-  document.getElementById('p0').classList.toggle('active',turn===0);
-  document.getElementById('p1').classList.toggle('active',turn===1);
-}
-
-/* =======================
-   CRICKET
-======================= */
-function initCricket(){
-  return{pts:0,m:{20:0,19:0,18:0,17:0,16:0,15:0,25:0}};
-}
-function buildCricketGrid(){
-  const g=document.getElementById('cgrid');
-  g.innerHTML='';
-  document.getElementById('cn0').textContent=players[0];
-  document.getElementById('cn1').textContent=players[1];
-  cricketTargets.forEach(t=>{
-    g.insertAdjacentHTML('beforeend',`
-      <div class="marks" id="m0_${t}"></div>
-      <div class="center">${t===25?'BULL':t}</div>
-      <div class="marks" id="m1_${t}"></div>
-    `);
-  });
-}
-function updateCricket(){
-  if(mode!=='cricket')return;
-  document.getElementById('cp0').textContent=cricket[0].pts+' Punkte';
-  document.getElementById('cp1').textContent=cricket[1].pts+' Punkte';
-  cricketTargets.forEach(t=>{
-    [0,1].forEach(p=>{
-      const el=document.getElementById(`m${p}_${t}`);
-      el.innerHTML='';
-      for(let i=0;i<3;i++){
-        el.insertAdjacentHTML('beforeend',
-          `<div class="mark ${cricket[p].m[t]>i?'on':''}"></div>`);
-      }
-      el.classList.toggle('activePlayer',p===turn);
-    });
-  });
-}
-
-/* =======================
-   TOURNAMENT TABLE & MODAL
-======================= */
-function updateTable(winner){
-  if(!tournament)return;
-  tournament.table[winner].w++;
-  tournament.table[winner].pts+=2;
-}
-function markMatch(winner,res){
-  if(!tournament)return;
-  const m=tournament.matches.find(x=>!x.done&&
-    ((x.a===players[0]&&x.b===players[1])||(x.a===players[1]&&x.b===players[0])));
-  if(m){m.done=true;m.res=res}
-  renderLiveTables();
-}
-function renderLiveTables(){
-  if(!tournament)return;
-  const el=document.getElementById('liveTables');
-  let html='<table class="table"><tr><th>Spieler</th><th>S</th><th>P</th></tr>';
-  Object.entries(tournament.table).forEach(([n,d])=>{
-    html+=`<tr><td>${n}</td><td>${d.w}</td><td>${d.pts}</td></tr>`;
-  });
-  html+='</table>';
-  el.innerHTML=html;
-}
-function openMatches(){
-  if(!tournament)return;
-  const modal=document.getElementById('modal');
-  const cont=document.getElementById('modalContent');
-  modal.classList.remove('hidden');
-  let html='<table class="table"><tr><th>Match</th><th>Status</th><th>Ergebnis</th></tr>';
-  tournament.matches.forEach(m=>{
-    html+=`<tr><td>${m.a} vs ${m.b}</td><td>${m.done?'gespielt':'offen'}</td><td>${m.res}</td></tr>`;
-  });
-  html+='</table>';
-  cont.innerHTML=html;
-}
-function closeModal(){
-  document.getElementById('modal').classList.add('hidden');
-}
-function showStats(){
-  hideAll();
-  document.getElementById('tablePanel').classList.remove('hidden');
-  document.getElementById('tablePanel').innerHTML='<p>Statistiken folgen…</p>';
-}
-</script>
+    // Popup next
+    document.getElementById("popupNext").onclick = () => {
+        popup.style.display = "none";
+        saveStats();
+        showMenu();
+    };
+    document.getElementById("btnFilter").onclick = updateStatsTable;
+    document.getElementById("btnClearStats").onclick = clearStats;
+    
+    // Show menu on load
+    showMenu();
+    </script>
 </body>
 </html>
