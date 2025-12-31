@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dart App – Cricket</title>
+<title>Dart App</title>
 
 <style>
 :root{
@@ -22,8 +22,6 @@ body{
 }
 .app{max-width:1200px;margin:auto}
 .panel{background:#111;padding:12px;border-radius:14px;margin-bottom:12px}
-.hidden{display:none}
-
 .header{
   display:flex;
   justify-content:space-between;
@@ -52,6 +50,20 @@ body{
   background:#000;
   color:#eee;
 }
+.mode.active{background:var(--gold);color:#000}
+
+.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.player{
+  background:#000;
+  border:2px solid #0f5d35;
+  border-radius:12px;
+  padding:10px;
+}
+.player.active{border-color:var(--gold)}
+.score{font-size:42px;font-weight:900}
+.avg{font-size:14px;color:#ffd700}
+.checkout{color:#ffd700;font-weight:800;font-size:14px}
+.log{font-size:12px;opacity:.85;margin-top:4px}
 
 .controls{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
 .ctrl{
@@ -95,25 +107,20 @@ body{
   background:var(--gold);
 }
 
-/* ---------- Cricket ---------- */
-.cricket-header{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  text-align:center;
-  margin-bottom:10px;
+.actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.btn{padding:14px;font-weight:900;border-radius:12px;border:none}
+.green{background:var(--green);color:#000}
+.red{background:var(--red);color:#fff}
+
+.table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.table th,.table td{
+  border-bottom:1px solid #333;
+  padding:6px;
+  text-align:center
 }
-.cricket-board{
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  gap:12px;
-  align-items:center;
-}
-.cricket-row{
-  margin:6px 0;
-  text-align:center;
-  font-weight:900;
-}
-.cricket-num{color:var(--gold);font-size:20px}
+.table th{color:var(--gold)}
+
+.hidden{display:none}
 </style>
 </head>
 
@@ -127,19 +134,30 @@ body{
 
 <div id="menu" class="panel">
   <div class="modes">
+    <button class="mode" onclick="start501()">501</button>
+    <button class="mode" onclick="start501Tournament()">501 Turnier</button>
     <button class="mode" onclick="startCricket()">Cricket</button>
   </div>
 </div>
 
-<div id="cricket" class="panel hidden">
-  <div class="cricket-header">
-    <div><strong>Spieler 1</strong><div id="cScore0">0</div></div>
-    <div><strong>Spieler 2</strong><div id="cScore1">0</div></div>
-  </div>
-  <div class="cricket-board">
-    <div id="cLeft"></div>
-    <div id="cCenter"></div>
-    <div id="cRight"></div>
+<div id="tournamentPanel" class="panel hidden"></div>
+
+<div id="game" class="panel hidden">
+  <div class="scores">
+    <div class="player active" id="p0">
+      <div id="n0"></div>
+      <div class="avg" id="a0"></div>
+      <div class="score" id="s0"></div>
+      <div class="checkout" id="c0"></div>
+      <div class="log" id="l0"></div>
+    </div>
+    <div class="player" id="p1">
+      <div id="n1"></div>
+      <div class="avg" id="a1"></div>
+      <div class="score" id="s1"></div>
+      <div class="checkout" id="c1"></div>
+      <div class="log" id="l1"></div>
+    </div>
   </div>
 </div>
 
@@ -148,8 +166,8 @@ body{
     <button class="ctrl active" onclick="setMult(1)">S</button>
     <button class="ctrl" onclick="setMult(2)">D</button>
     <button class="ctrl" onclick="setMult(3)">T</button>
-    <button class="ctrl" onclick="nextTurn()">⟳</button>
-    <button class="ctrl" onclick="undo()">Undo</button>
+    <button class="ctrl" onclick="prevPlayer()">⟲</button>
+    <button class="ctrl" onclick="nextPlayer()">⟳</button>
   </div>
 
   <div class="numbers" id="nums"></div>
@@ -158,100 +176,209 @@ body{
     <input id="man" type="number" min="0" max="60" placeholder="0–60">
     <button onclick="manual()">OK</button>
   </div>
+
+  <div class="actions">
+    <button class="btn red" onclick="undo()">Undo</button>
+    <button class="btn green" onclick="nextTurn()">Weiter</button>
+  </div>
 </div>
 
 </div>
 
 <script>
-let mode=null, mult=1, turn=0, darts=0;
-let history=[];
+let mode=null, turn=0, mult=1, darts=0;
+let players=[], scores=[501,501];
+let leg=[{p:0,d:0},{p:0,d:0}];
+let log=[[],[]], roundLog=[[],[]], lastRound=[[],[]];
+let hist=[];
 
-const cricketInit=()=>({
-  numbers:[20,19,18,17,16,15,25],
-  marks:[
-    {20:0,19:0,18:0,17:0,16:0,15:0,25:0},
-    {20:0,19:0,18:0,17:0,16:0,15:0,25:0}
-  ],
-  points:[0,0]
-});
-let cricket=cricketInit();
-
-const menu=document.getElementById("menu");
-const input=document.getElementById("input");
-const status=document.getElementById("status");
-const cLeft=document.getElementById("cLeft");
-const cCenter=document.getElementById("cCenter");
-const cRight=document.getElementById("cRight");
-const cScore0=document.getElementById("cScore0");
-const cScore1=document.getElementById("cScore1");
+let tournament=null, matchIndex=0;
 
 const nums=document.getElementById("nums");
-[20,19,18,17,16,15,25].forEach(v=>{
+for(let i=0;i<=20;i++){
   let b=document.createElement("button");
-  b.className="num"+(v===25?" bull":"");
-  b.textContent=v===25?"Bull":v;
-  b.onclick=()=>throwDart(v*mult);
+  b.className="num";
+  b.textContent=i;
+  b.onclick=()=>throwDart(i*mult,true);
+  nums.appendChild(b);
+}
+["Bull","DBull"].forEach((t,i)=>{
+  let b=document.createElement("button");
+  b.className="num bull";
+  b.textContent=t;
+  b.onclick=()=>throwDart(i?50:25,true);
   nums.appendChild(b);
 });
 
 function resetApp(){location.reload();}
+
+/* ======================= START MODES ======================= */
+function start501(){
+  tournament=null;
+  startMatch("501 – Double Out",["Spieler 1","Spieler 2"]);
+}
+
+function startCricket(){
+  startMatch("Cricket",["Spieler 1","Spieler 2"]);
+}
+
+function start501Tournament(){
+  let count=parseInt(prompt("Anzahl Spieler (4–8):","4"));
+  if(isNaN(count)||count<4||count>8) return;
+
+  let names=[];
+  for(let i=0;i<count;i++){
+    let n=prompt("Name Spieler "+(i+1), "Spieler "+(i+1));
+    names.push(n||("Spieler "+(i+1)));
+  }
+
+  tournament={players:names,table:{},matches:[]};
+  names.forEach(n=>tournament.table[n]={p:0,w:0,l:0,ld:0});
+
+  for(let i=0;i<names.length;i++){
+    for(let j=i+1;j<names.length;j++){
+      tournament.matches.push([names[i],names[j]]);
+    }
+  }
+
+  matchIndex=0;
+  document.getElementById("tournamentPanel").classList.remove("hidden");
+  loadNextTournamentMatch();
+}
+
+/* ======================= TURNIER ======================= */
+function loadNextTournamentMatch(){
+  renderTable();
+  if(matchIndex>=tournament.matches.length){
+    alert("Turnier beendet!");
+    resetApp();
+    return;
+  }
+  startMatch("501 – Turnier",tournament.matches[matchIndex]);
+}
+
+function renderTable(){
+  let html=`<table class="table"><tr>
+  <th>Spieler</th><th>P</th><th>S</th><th>N</th><th>LD</th></tr>`;
+  Object.entries(tournament.table).forEach(([n,d])=>{
+    html+=`<tr><td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td><td>${d.ld}</td></tr>`;
+  });
+  html+=`</table>`;
+  tournamentPanel.innerHTML=html;
+}
+
+/* ======================= MATCH ======================= */
+function startMatch(title,names){
+  mode="501";
+  players=names;
+  scores=[501,501];
+  leg=[{p:0,d:0},{p:0,d:0}];
+  log=[[],[]];
+  roundLog=[[],[]];
+  lastRound=[[],[]];
+  hist=[];
+  turn=0; darts=0;
+  document.getElementById("menu").classList.add("hidden");
+  document.getElementById("game").classList.remove("hidden");
+  document.getElementById("input").classList.remove("hidden");
+  document.getElementById("status").textContent=title;
+  update();
+}
+
+/* ======================= GAME LOGIC ======================= */
 function setMult(m){
   mult=m;
   document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));
   document.querySelectorAll(".ctrl")[m-1].classList.add("active");
 }
 
-function startCricket(){
-  mode="cricket";
-  cricket=cricketInit();
-  history=[];
-  turn=0; darts=0;
-  menu.classList.add("hidden");
-  input.classList.remove("hidden");
-  document.getElementById("cricket").classList.remove("hidden");
-  status.textContent="Cricket";
-  render();
-}
+function throwDart(v,board){
+  hist.push(JSON.stringify({scores,leg,log,roundLog,lastRound,turn,darts}));
+  leg[turn].p+=v;
+  leg[turn].d++;
+  log[turn].push(v);
+  roundLog[turn].push(v);
 
-function render(){
-  cScore0.textContent=cricket.points[0];
-  cScore1.textContent=cricket.points[1];
-  cLeft.innerHTML=cCenter.innerHTML=cRight.innerHTML="";
-  cricket.numbers.forEach(n=>{
-    cCenter.innerHTML+=`<div class="cricket-row cricket-num">${n===25?"Bull":n}</div>`;
-    cLeft.innerHTML+=`<div class="cricket-row">${marks(cricket.marks[0][n])}</div>`;
-    cRight.innerHTML+=`<div class="cricket-row">${marks(cricket.marks[1][n])}</div>`;
-  });
-}
-
-function marks(v){return v>=3?"⭕":("/".repeat(v)||"–");}
-
-function throwDart(v){
-  if(!cricket.numbers.includes(v)) return;
-  history.push(JSON.stringify({cricket,turn,darts}));
-  let me=cricket.marks[turn];
-  let opp=cricket.marks[1-turn];
-  if(me[v]<3) me[v]++; else if(opp[v]<3) cricket.points[turn]+=v;
-  darts++;
-  if(darts===3) nextTurn();
-  if(cricket.numbers.every(n=>me[n]>=3)){
-    alert("Spieler "+(turn+1)+" gewinnt!");
-    resetApp();
+  const n=scores[turn]-v;
+  if(n<0||(n===0&&v%2!==0)){
+    undo(); nextTurn(); return;
   }
-  render();
+  scores[turn]=n;
+
+  if(n===0){
+    const winner=players[turn];
+    if(tournament){
+      const loser=players[1-turn];
+      tournament.table[winner].w++;
+      tournament.table[winner].p+=2;
+      tournament.table[winner].ld++;
+      tournament.table[loser].l++;
+      tournament.table[loser].ld--;
+      matchIndex++;
+      alert(winner+" gewinnt!");
+      loadNextTournamentMatch();
+      return;
+    }else{
+      alert(winner+" gewinnt!");
+      resetApp();
+      return;
+    }
+  }
+
+  if(board && ++darts>=3){
+    lastRound[turn]=[...roundLog[turn]];
+    roundLog[turn]=[];
+    nextTurn();
+  }
+  mult=1;
+  update();
 }
 
-function nextTurn(){darts=0;turn=1-turn;}
-function undo(){
-  if(!history.length) return;
-  let s=JSON.parse(history.pop());
-  cricket=s.cricket; turn=s.turn; darts=s.darts;
-  render();
-}
 function manual(){
-  let v=+man.value;
-  if(cricket.numbers.includes(v)) throwDart(v);
+  const v=+man.value;
+  if(v>=0&&v<=60) throwDart(v,false);
   man.value="";
+}
+
+function undo(){
+  if(!hist.length) return;
+  const s=JSON.parse(hist.pop());
+  scores=s.scores; leg=s.leg; log=s.log;
+  roundLog=s.roundLog; lastRound=s.lastRound;
+  turn=s.turn; darts=s.darts;
+  update();
+}
+
+function nextTurn(){
+  darts=0;
+  lastRound[turn]=[...roundLog[turn]];
+  roundLog[turn]=[];
+  turn=1-turn;
+  update();
+}
+function nextPlayer(){nextTurn()}
+function prevPlayer(){nextTurn()}
+
+function avg(i){
+  return leg[i].d?((leg[i].p/leg[i].d)*3).toFixed(1):"0.0";
+}
+function checkout(s){
+  if(s>100||s<=1) return "";
+  if(s<=40&&s%2===0) return "D"+(s/2);
+  return "";
+}
+
+function update(){
+  n0.textContent=players[0]+" (Ø "+avg(0)+")";
+  n1.textContent=players[1]+" (Ø "+avg(1)+")";
+  s0.textContent=scores[0];
+  s1.textContent=scores[1];
+  c0.textContent=checkout(scores[0]);
+  c1.textContent=checkout(scores[1]);
+  l0.textContent="Würfe: "+(turn===0?roundLog[0]:lastRound[0]).join(" · ");
+  l1.textContent="Würfe: "+(turn===1?roundLog[1]:lastRound[1]).join(" · ");
+  p0.classList.toggle("active",turn===0);
+  p1.classList.toggle("active",turn===1);
 }
 </script>
 
