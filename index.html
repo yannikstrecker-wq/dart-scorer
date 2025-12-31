@@ -186,11 +186,12 @@ body{
 </div>
 
 <script>
-/* ================== MATCH ENGINE (UNVERÄNDERT STABIL) ================== */
 let mode=null, turn=0, mult=1, darts=0;
-let players=[], scores=[501,501], leg=[{p:0,d:0},{p:0,d:0}], log=[[],[]], hist=[];
+let players=[], scores=[501,501];
+let leg=[{p:0,d:0},{p:0,d:0}];
+let log=[[],[]], roundLog=[[],[]], lastRound=[[],[]];
+let hist=[];
 
-/* ================== TURNIER ================== */
 let tournament=null, matchIndex=0;
 
 const nums=document.getElementById("nums");
@@ -211,6 +212,7 @@ for(let i=0;i<=20;i++){
 
 function resetApp(){location.reload();}
 
+/* ======================= START MODES ======================= */
 function start501(){
   tournament=null;
   startMatch("501 – Double Out",["Spieler 1","Spieler 2"]);
@@ -221,22 +223,30 @@ function startCricket(){
 }
 
 function start501Tournament(){
-  const names=["A","B","C","D"];
-  tournament={
-    players:names,
-    table:{},
-    matches:[
-      ["A","B"],["C","D"],
-      ["A","C"],["B","D"],
-      ["A","D"],["B","C"]
-    ]
-  };
+  let count=parseInt(prompt("Anzahl Spieler (4–8):","4"));
+  if(isNaN(count)||count<4||count>8) return;
+
+  let names=[];
+  for(let i=0;i<count;i++){
+    let n=prompt("Name Spieler "+(i+1), "Spieler "+(i+1));
+    names.push(n||("Spieler "+(i+1)));
+  }
+
+  tournament={players:names,table:{},matches:[]};
   names.forEach(n=>tournament.table[n]={p:0,w:0,l:0,ld:0});
+
+  for(let i=0;i<names.length;i++){
+    for(let j=i+1;j<names.length;j++){
+      tournament.matches.push([names[i],names[j]]);
+    }
+  }
+
   matchIndex=0;
   document.getElementById("tournamentPanel").classList.remove("hidden");
   loadNextTournamentMatch();
 }
 
+/* ======================= TURNIER ======================= */
 function loadNextTournamentMatch(){
   renderTable();
   if(matchIndex>=tournament.matches.length){
@@ -244,13 +254,12 @@ function loadNextTournamentMatch(){
     resetApp();
     return;
   }
-  const m=tournament.matches[matchIndex];
-  startMatch("501 – Turnier",m);
+  startMatch("501 – Turnier",tournament.matches[matchIndex]);
 }
 
 function renderTable(){
   let html=`<table class="table"><tr>
-    <th>Spieler</th><th>P</th><th>S</th><th>N</th><th>LD</th></tr>`;
+  <th>Spieler</th><th>P</th><th>S</th><th>N</th><th>LD</th></tr>`;
   Object.entries(tournament.table).forEach(([n,d])=>{
     html+=`<tr><td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td><td>${d.ld}</td></tr>`;
   });
@@ -258,15 +267,17 @@ function renderTable(){
   tournamentPanel.innerHTML=html;
 }
 
+/* ======================= MATCH ======================= */
 function startMatch(title,names){
   mode="501";
   players=names;
   scores=[501,501];
   leg=[{p:0,d:0},{p:0,d:0}];
   log=[[],[]];
+  roundLog=[[],[]];
+  lastRound=[[],[]];
   hist=[];
-  turn=0;
-  darts=0;
+  turn=0; darts=0;
   document.getElementById("menu").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
   document.getElementById("input").classList.remove("hidden");
@@ -274,7 +285,7 @@ function startMatch(title,names){
   update();
 }
 
-/* ================== GAME LOGIC ================== */
+/* ======================= GAME LOGIC ======================= */
 function setMult(m){
   mult=m;
   document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));
@@ -282,15 +293,18 @@ function setMult(m){
 }
 
 function throwDart(v,board){
-  hist.push(JSON.stringify({scores,leg,log,turn,darts}));
+  hist.push(JSON.stringify({scores,leg,log,roundLog,lastRound,turn,darts}));
   leg[turn].p+=v;
   leg[turn].d++;
   log[turn].push(v);
+  roundLog[turn].push(v);
+
   const n=scores[turn]-v;
   if(n<0||(n===0&&v%2!==0)){
     undo(); nextTurn(); return;
   }
   scores[turn]=n;
+
   if(n===0){
     const winner=players[turn];
     if(tournament){
@@ -310,7 +324,12 @@ function throwDart(v,board){
       return;
     }
   }
-  if(board && ++darts>=3) nextTurn();
+
+  if(board && ++darts>=3){
+    lastRound[turn]=[...roundLog[turn]];
+    roundLog[turn]=[];
+    nextTurn();
+  }
   mult=1;
   update();
 }
@@ -320,32 +339,48 @@ function manual(){
   if(v>=0&&v<=60) throwDart(v,false);
   man.value="";
 }
+
 function undo(){
   if(!hist.length) return;
   const s=JSON.parse(hist.pop());
-  scores=s.scores; leg=s.leg; log=s.log; turn=s.turn; darts=s.darts;
+  scores=s.scores; leg=s.leg; log=s.log;
+  roundLog=s.roundLog; lastRound=s.lastRound;
+  turn=s.turn; darts=s.darts;
   update();
 }
-function nextTurn(){darts=0;turn=1-turn;update();}
+
+function nextTurn(){
+  darts=0;
+  lastRound[turn]=[...roundLog[turn]];
+  roundLog[turn]=[];
+  turn=1-turn;
+  update();
+}
 function nextPlayer(){nextTurn()}
 function prevPlayer(){nextTurn()}
 
-function avg(i){return leg[i].d?((leg[i].p/leg[i].d)*3).toFixed(1):"0.0";}
+function avg(i){
+  return leg[i].d?((leg[i].p/leg[i].d)*3).toFixed(1):"0.0";
+}
 function checkout(s){
   if(s>100||s<=1) return "";
   if(s<=40&&s%2===0) return "D"+(s/2);
   return "";
 }
+
 function update(){
   n0.textContent=players[0]+" (Ø "+avg(0)+")";
   n1.textContent=players[1]+" (Ø "+avg(1)+")";
-  s0.textContent=scores[0]; s1.textContent=scores[1];
-  c0.textContent=checkout(scores[0]); c1.textContent=checkout(scores[1]);
-  l0.textContent="Würfe: "+log[0].join(" · ");
-  l1.textContent="Würfe: "+log[1].join(" · ");
+  s0.textContent=scores[0];
+  s1.textContent=scores[1];
+  c0.textContent=checkout(scores[0]);
+  c1.textContent=checkout(scores[1]);
+  l0.textContent="Würfe: "+(turn===0?roundLog[0]:lastRound[0]).join(" · ");
+  l1.textContent="Würfe: "+(turn===1?roundLog[1]:lastRound[1]).join(" · ");
   p0.classList.toggle("active",turn===0);
   p1.classList.toggle("active",turn===1);
 }
 </script>
+
 </body>
 </html>
