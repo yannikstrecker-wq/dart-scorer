@@ -112,6 +112,14 @@ body{
 .green{background:var(--green);color:#000}
 .red{background:var(--red);color:#fff}
 
+.table{width:100%;border-collapse:collapse;margin-bottom:10px}
+.table th,.table td{
+  border-bottom:1px solid #333;
+  padding:6px;
+  text-align:center
+}
+.table th{color:var(--gold)}
+
 .hidden{display:none}
 </style>
 </head>
@@ -131,6 +139,8 @@ body{
     <button class="mode" onclick="startCricket()">Cricket</button>
   </div>
 </div>
+
+<div id="tournamentPanel" class="panel hidden"></div>
 
 <div id="game" class="panel hidden">
   <div class="scores">
@@ -176,8 +186,12 @@ body{
 </div>
 
 <script>
+/* ================== MATCH ENGINE (UNVERÄNDERT STABIL) ================== */
 let mode=null, turn=0, mult=1, darts=0;
 let players=[], scores=[501,501], leg=[{p:0,d:0},{p:0,d:0}], log=[[],[]], hist=[];
+
+/* ================== TURNIER ================== */
+let tournament=null, matchIndex=0;
 
 const nums=document.getElementById("nums");
 for(let i=0;i<=20;i++){
@@ -195,31 +209,64 @@ for(let i=0;i<=20;i++){
   nums.appendChild(b);
 });
 
-function resetApp(){
-  location.reload();
-}
+function resetApp(){location.reload();}
 
 function start501(){
-  mode="501";
-  players=["Spieler 1","Spieler 2"];
-  scores=[501,501];
-  leg=[{p:0,d:0},{p:0,d:0}];
-  log=[[],[]];
-  turn=0;
-  showGame("501 – Double Out");
-}
-
-function start501Tournament(){
-  start501();
-  document.getElementById("status").textContent="501 – Turnier";
+  tournament=null;
+  startMatch("501 – Double Out",["Spieler 1","Spieler 2"]);
 }
 
 function startCricket(){
-  start501();
-  document.getElementById("status").textContent="Cricket";
+  startMatch("Cricket",["Spieler 1","Spieler 2"]);
 }
 
-function showGame(title){
+function start501Tournament(){
+  const names=["A","B","C","D"];
+  tournament={
+    players:names,
+    table:{},
+    matches:[
+      ["A","B"],["C","D"],
+      ["A","C"],["B","D"],
+      ["A","D"],["B","C"]
+    ]
+  };
+  names.forEach(n=>tournament.table[n]={p:0,w:0,l:0,ld:0});
+  matchIndex=0;
+  document.getElementById("tournamentPanel").classList.remove("hidden");
+  loadNextTournamentMatch();
+}
+
+function loadNextTournamentMatch(){
+  renderTable();
+  if(matchIndex>=tournament.matches.length){
+    alert("Turnier beendet!");
+    resetApp();
+    return;
+  }
+  const m=tournament.matches[matchIndex];
+  startMatch("501 – Turnier",m);
+}
+
+function renderTable(){
+  let html=`<table class="table"><tr>
+    <th>Spieler</th><th>P</th><th>S</th><th>N</th><th>LD</th></tr>`;
+  Object.entries(tournament.table).forEach(([n,d])=>{
+    html+=`<tr><td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td><td>${d.ld}</td></tr>`;
+  });
+  html+=`</table>`;
+  tournamentPanel.innerHTML=html;
+}
+
+function startMatch(title,names){
+  mode="501";
+  players=names;
+  scores=[501,501];
+  leg=[{p:0,d:0},{p:0,d:0}];
+  log=[[],[]];
+  hist=[];
+  turn=0;
+  darts=0;
   document.getElementById("menu").classList.add("hidden");
   document.getElementById("game").classList.remove("hidden");
   document.getElementById("input").classList.remove("hidden");
@@ -227,6 +274,7 @@ function showGame(title){
   update();
 }
 
+/* ================== GAME LOGIC ================== */
 function setMult(m){
   mult=m;
   document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));
@@ -240,20 +288,29 @@ function throwDart(v,board){
   log[turn].push(v);
   const n=scores[turn]-v;
   if(n<0||(n===0&&v%2!==0)){
-    undo();
-    nextTurn();
-    return;
+    undo(); nextTurn(); return;
   }
   scores[turn]=n;
   if(n===0){
-    alert(players[turn]+" gewinnt!");
-    resetApp();
-    return;
+    const winner=players[turn];
+    if(tournament){
+      const loser=players[1-turn];
+      tournament.table[winner].w++;
+      tournament.table[winner].p+=2;
+      tournament.table[winner].ld++;
+      tournament.table[loser].l++;
+      tournament.table[loser].ld--;
+      matchIndex++;
+      alert(winner+" gewinnt!");
+      loadNextTournamentMatch();
+      return;
+    }else{
+      alert(winner+" gewinnt!");
+      resetApp();
+      return;
+    }
   }
-  if(board){
-    darts++;
-    if(darts>=3) nextTurn();
-  }
+  if(board && ++darts>=3) nextTurn();
   mult=1;
   update();
 }
@@ -263,48 +320,32 @@ function manual(){
   if(v>=0&&v<=60) throwDart(v,false);
   man.value="";
 }
-
 function undo(){
   if(!hist.length) return;
   const s=JSON.parse(hist.pop());
-  scores=s.scores;
-  leg=s.leg;
-  log=s.log;
-  turn=s.turn;
-  darts=s.darts;
+  scores=s.scores; leg=s.leg; log=s.log; turn=s.turn; darts=s.darts;
   update();
 }
-
-function nextTurn(){
-  darts=0;
-  turn=1-turn;
-  update();
-}
+function nextTurn(){darts=0;turn=1-turn;update();}
 function nextPlayer(){nextTurn()}
 function prevPlayer(){nextTurn()}
 
-function avg(i){
-  return leg[i].d?((leg[i].p/leg[i].d)*3).toFixed(1):"0.0";
-}
+function avg(i){return leg[i].d?((leg[i].p/leg[i].d)*3).toFixed(1):"0.0";}
 function checkout(s){
   if(s>100||s<=1) return "";
   if(s<=40&&s%2===0) return "D"+(s/2);
   return "";
 }
-
 function update(){
   n0.textContent=players[0]+" (Ø "+avg(0)+")";
   n1.textContent=players[1]+" (Ø "+avg(1)+")";
-  s0.textContent=scores[0];
-  s1.textContent=scores[1];
-  c0.textContent=checkout(scores[0]);
-  c1.textContent=checkout(scores[1]);
+  s0.textContent=scores[0]; s1.textContent=scores[1];
+  c0.textContent=checkout(scores[0]); c1.textContent=checkout(scores[1]);
   l0.textContent="Würfe: "+log[0].join(" · ");
   l1.textContent="Würfe: "+log[1].join(" · ");
   p0.classList.toggle("active",turn===0);
   p1.classList.toggle("active",turn===1);
 }
 </script>
-
 </body>
 </html>
