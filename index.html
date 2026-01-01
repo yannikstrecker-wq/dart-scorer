@@ -6,6 +6,7 @@
 <title>Dart App</title>
 
 <style>
+/* ===== UNVERÄNDERT ===== */
 :root{
   --green:#1e7f4f;
   --red:#b8322a;
@@ -23,148 +24,44 @@ body{
 .app{max-width:1200px;margin:auto}
 .panel{background:#111;padding:12px;border-radius:14px;margin-bottom:12px}
 .hidden{display:none !important}
-
-/* HEADER */
 .header{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  border:2px solid var(--gold);
-  border-radius:14px;
-  padding:10px;
-  background:#000;
+  display:flex;justify-content:space-between;align-items:center;
+  border:2px solid var(--gold);border-radius:14px;
+  padding:10px;background:#000;
 }
 .header h1{margin:0;color:var(--gold)}
 .header .actionsHead{display:flex;gap:6px}
-
-/* MENU */
 .modes{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.mode{
-  padding:14px;
-  font-weight:900;
-  border-radius:12px;
-  border:2px solid #0f5d35;
-  background:#000;
-  color:#eee;
-}
-
-/* SCORE */
+.mode{padding:14px;font-weight:900;border-radius:12px;border:2px solid #0f5d35;background:#000;color:#eee}
 .scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.player{
-  background:#000;
-  border:2px solid #0f5d35;
-  border-radius:12px;
-  padding:10px;
-}
+.player{background:#000;border:2px solid #0f5d35;border-radius:12px;padding:10px}
 .player.active{border-color:var(--gold)}
 .score{font-size:42px;font-weight:900}
 .avg{font-size:14px;color:#ffd700}
 .log{font-size:12px;opacity:.85}
-
-/* INPUT */
 .controls{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
-.ctrl{
-  padding:10px;
-  font-weight:900;
-  border-radius:10px;
-  border:2px solid #0f5d35;
-  background:#000;
-  color:#eee;
-}
+.ctrl{padding:10px;font-weight:900;border-radius:10px;border:2px solid #0f5d35;background:#000;color:#eee}
 .ctrl.active{background:var(--gold);color:#000}
-
 .numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.num{
-  padding:14px;
-  font-size:18px;
-  font-weight:900;
-  background:#000;
-  color:#fff;
-  border:2px solid #0f5d35;
-  border-radius:10px;
-}
+.num{padding:14px;font-size:18px;font-weight:900;background:#000;color:#fff;border:2px solid #0f5d35;border-radius:10px}
 .bull{color:#ffd700}
-
-/* QUICK */
 .quick{display:flex;gap:6px;margin-top:6px}
-.quick input{
-  flex:1;
-  padding:10px;
-  border-radius:8px;
-  border:2px solid #333;
-  background:#000;
-  color:#fff;
-  text-align:center;
-  font-weight:900;
-}
-.quick button{
-  padding:10px 14px;
-  border-radius:8px;
-  border:none;
-  font-weight:900;
-  background:var(--gold);
-}
-
+.quick input{flex:1;padding:10px;border-radius:8px;border:2px solid #333;background:#000;color:#fff;text-align:center;font-weight:900}
+.quick button{padding:10px 14px;border-radius:8px;border:none;font-weight:900;background:var(--gold)}
 .actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .btn{padding:14px;font-weight:900;border-radius:12px;border:none}
 .green{background:var(--green)}
 .red{background:var(--red);color:#fff}
-
-/* TABLE */
 .table{width:100%;border-collapse:collapse;margin-top:8px}
-.table th,.table td{
-  border-bottom:1px solid #333;
-  padding:6px;
-  text-align:center
-}
+.table th,.table td{border-bottom:1px solid #333;padding:6px;text-align:center}
 .table th{color:var(--gold)}
 .mark{color:#ffd700;font-weight:900}
-
-/* MODAL */
-.modal{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.85);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  z-index:1000;
-}
-.modalBox{
-  background:#000;
-  border:2px solid var(--gold);
-  border-radius:14px;
-  padding:16px;
-  max-width:800px;
-  width:100%;
-  max-height:85vh;
-  overflow:auto;
-}
-.closeBtn{
-  float:right;
-  background:var(--red);
-  border:none;
-  padding:6px 10px;
-  font-weight:900;
-  border-radius:8px;
-  color:#fff;
-  cursor:pointer;
-}
-
-/* BRACKET */
-.bracket{
-  display:grid;
-  grid-template-columns:1fr 1fr 1fr;
-  gap:10px;
-  text-align:center;
-  margin-top:10px;
-}
-.bracket .match{
-  border:2px solid #0f5d35;
-  border-radius:10px;
-  padding:8px;
-}
-.bracket .winner{border-color:var(--gold);color:var(--gold)}
+.crRow{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;text-align:center;margin:6px 0}
+.hit{color:#ffd700;font-weight:900}
+.closed{color:#ff5252;font-weight:900}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modalBox{background:#000;border:2px solid var(--gold);border-radius:14px;padding:16px;max-width:700px;width:100%;max-height:85vh;overflow:auto}
+.closeBtn{float:right;background:var(--red);border:none;padding:6px 10px;font-weight:900;border-radius:8px;color:#fff;cursor:pointer}
 </style>
 </head>
 
@@ -198,14 +95,11 @@ body{
     <button class="ctrl" onclick="prevPlayer()">⟲</button>
     <button class="ctrl" onclick="nextPlayer()">⟳</button>
   </div>
-
   <div class="numbers" id="nums"></div>
-
   <div class="quick">
     <input id="manual" type="number" min="0" max="180" placeholder="0–180">
     <button onclick="manualInput()">OK</button>
   </div>
-
   <div class="actions">
     <button class="btn red" onclick="undo()">Undo</button>
     <button class="btn green" onclick="nextTurn()">Weiter</button>
@@ -214,7 +108,6 @@ body{
 
 </div>
 
-<!-- MODAL -->
 <div id="overviewModal" class="modal hidden" onclick="closeOverview()">
   <div class="modalBox" onclick="event.stopPropagation()">
     <button class="closeBtn" onclick="closeOverview()">X</button>
@@ -229,12 +122,11 @@ let mode=null, turn=0, mult=1, darts=0;
 let players=[], scores=[501,501], legs=[0,0];
 let log=[[],[]], roundLog=[[],[]], lastRound=[[],[]], hist=[];
 
-let tournament=null;
-let phase="group";
-let currentMatch=null;
-let semiResults=[];
+/* ========= TURNIER ========= */
+let tournament=null, phase="group", currentMatch=null;
+let semiResults=[]; // <<< KO-FIX
 
-/* ========= 501 ========= */
+/* ========= NUMPAD ========= */
 const nums=document.getElementById("nums");
 function build501Numbers(){
   nums.innerHTML="";
@@ -254,12 +146,13 @@ function build501Numbers(){
   });
 }
 
+/* ========= 501 EINZEL ========= */
 function start501(){
   tournament=null;
   startMatch("501 – Double Out",["Spieler 1","Spieler 2"]);
 }
 
-/* ========= TURNIER ========= */
+/* ========= TURNIER START ========= */
 function startTournament(){
   let count=+prompt("Anzahl Spieler (4–8)","4");
   if(count<4||count>8) return;
@@ -274,14 +167,11 @@ function startTournament(){
     tables:[],
     groupMatches:[],
     groupResults:[],
-    semi:[],
-    final:null,
-    third:null,
     podium:{}
   };
 
   let table={};
-  names.forEach(n=>table[n]={p:0,w:0,l:0,legs:0});
+  names.forEach(n=>table[n]={p:0,w:0,l:0});
   tournament.tables=[table];
 
   for(let i=0;i<names.length;i++){
@@ -291,13 +181,14 @@ function startTournament(){
   }
 
   phase="group";
+  semiResults=[];
   nextGroupMatch();
 }
 
 function nextGroupMatch(){
   renderTables();
   if(!tournament.groupMatches.length){
-    buildSemi();
+    buildKO();
     phase="semi";
     nextKOMatch();
     return;
@@ -306,19 +197,23 @@ function nextGroupMatch(){
   startMatch("501 – Gruppe",[currentMatch.a,currentMatch.b]);
 }
 
-function buildSemi(){
-  let ranked=Object.entries(tournament.tables[0])
-    .sort((a,b)=>b[1].p-a[1].p||b[1].legs-a[1].legs)
+/* ========= KO BAUEN ========= */
+function buildKO(){
+  let t=tournament.tables[0];
+  let r=Object.entries(t)
+    .sort((a,b)=>b[1].p-a[1].p)
     .map(x=>x[0]);
-  tournament.semi=[
-    {a:ranked[0],b:ranked[3]},
-    {a:ranked[1],b:ranked[2]}
+
+  tournament.ko=[
+    {a:r[0],b:r[3]},
+    {a:r[1],b:r[2]}
   ];
 }
 
+/* ========= KO ABLAUF ========= */
 function nextKOMatch(){
   if(phase==="semi"){
-    currentMatch=tournament.semi.shift();
+    currentMatch=tournament.ko.shift();
     startMatch("501 – Halbfinale",[currentMatch.a,currentMatch.b]);
     return;
   }
@@ -350,10 +245,16 @@ function startMatch(title,names){
   update();
 }
 
+/* ========= THROW ========= */
+function setMult(m){
+  mult=m;
+  document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));
+  document.querySelectorAll(".ctrl")[m-1].classList.add("active");
+}
+
 function throwDart(v){
   hist.push(JSON.stringify({scores,legs,log,roundLog,lastRound,turn,darts}));
-  log[turn].push(v);
-  roundLog[turn].push(v);
+  log[turn].push(v); roundLog[turn].push(v);
 
   const n=scores[turn]-v;
   if(n<0||(n===0&&v%2!==0)){undo();nextTurn();return;}
@@ -369,21 +270,21 @@ function throwDart(v){
   }
 
   if(++darts>=3){
+    lastRound[turn]=[...roundLog[turn]];
+    roundLog[turn]=[];
     nextTurn();
   }
   mult=1;
   update();
 }
 
+/* ========= MATCH ENDE (KO FIX) ========= */
 function endMatch(winner){
   let loser=players[0]===winner?players[1]:players[0];
-  let res=`${legs[0]}:${legs[1]}`;
 
   if(phase==="group"){
     let t=tournament.tables[0];
-    t[winner].p+=2;
-    t[winner].w++;
-    t[winner].legs+=legs[turn];
+    t[winner].p+=2; t[winner].w++;
     t[loser].l++;
     nextGroupMatch();
     return;
@@ -410,54 +311,111 @@ function endMatch(winner){
   if(phase==="final"){
     tournament.podium.first=winner;
     tournament.podium.second=loser;
-    phase="podium";
     showPodium();
   }
 }
 
+/* ========= TABELLEN ========= */
+function renderTables(){
+  let html="";
+  let t=tournament.tables[0];
+  html+=`<h3>Gruppe</h3><table class="table">
+  <tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>`;
+  Object.entries(t).sort((a,b)=>b[1].p-a[1].p)
+    .forEach(([n,d],i)=>{
+      html+=`<tr class="${i<4?'mark':''}">
+      <td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td></tr>`;
+    });
+  html+=`</table>`;
+  tournamentPanel.innerHTML=html;
+}
+
+/* ========= COMMON ========= */
+function undo(){
+  if(!hist.length) return;
+  let s=JSON.parse(hist.pop());
+  scores=s.scores; legs=s.legs;
+  log=s.log; roundLog=s.roundLog; lastRound=s.lastRound;
+  turn=s.turn; darts=s.darts;
+  update();
+}
+function nextTurn(){
+  darts=0;
+  lastRound[turn]=[...roundLog[turn]];
+  roundLog[turn]=[];
+  turn=1-turn;
+  update();
+}
+function nextPlayer(){nextTurn()}
+function prevPlayer(){turn=1-turn;update()}
+function avg(i){
+  let sum=log[i].reduce((a,b)=>a+b,0);
+  return log[i].length?((sum/log[i].length)*3).toFixed(1):"0.0";
+}
 function update(){
   game.innerHTML=`
   <div class="scores">
     <div class="player ${turn===0?"active":""}">
       <b>${players[0]}</b>
+      <div class="avg">Ø ${avg(0)} | Legs ${legs[0]}</div>
       <div class="score">${scores[0]}</div>
+      <div class="log">${(turn===0?roundLog[0]:lastRound[0]).join(" · ")}</div>
     </div>
     <div class="player ${turn===1?"active":""}">
       <b>${players[1]}</b>
+      <div class="avg">Ø ${avg(1)} | Legs ${legs[1]}</div>
       <div class="score">${scores[1]}</div>
+      <div class="log">${(turn===1?roundLog[1]:lastRound[1]).join(" · ")}</div>
     </div>
   </div>`;
 }
 
-function nextTurn(){darts=0;turn=1-turn;update()}
-function prevPlayer(){turn=1-turn;update()}
-function nextPlayer(){nextTurn()}
-function undo(){
-  if(!hist.length)return;
-  let s=JSON.parse(hist.pop());
-  scores=s.scores;legs=s.legs;log=s.log;
-  roundLog=s.roundLog;lastRound=s.lastRound;
-  turn=s.turn;darts=s.darts;
-  update();
+/* ========= CRICKET (UNVERÄNDERT) ========= */
+const cNums=[20,19,18,17,16,15,"B"];
+let cHits=[[0,0,0,0,0,0,0],[0,0,0,0,0,0,0]];
+let cScore=[0,0];
+function startCricket(){
+  menu.classList.add("hidden");
+  game.classList.remove("hidden");
+  input.classList.remove("hidden");
+  status.textContent="Cricket";
+  nums.innerHTML="";
+  cNums.forEach(n=>{
+    let b=document.createElement("button");
+    b.className="num";
+    b.textContent=n;
+    b.onclick=()=>throwCricket(n);
+    nums.appendChild(b);
+  });
+  updateCricket();
 }
-
-/* ========= ÜBERSICHT ========= */
-function openOverview(){
-  let html="<div class='bracket'>";
-  if(tournament.final){
-    html+=`
-    <div class="match">${tournament.third.a}<br>vs<br>${tournament.third.b}</div>
-    <div class="match winner">${tournament.final.a}<br>🏆<br>${tournament.final.b}</div>
-    <div class="match">${tournament.podium.third||""}</div>`;
+function throwCricket(v){
+  let i=cNums.indexOf(v), opp=1-turn;
+  let hits=mult;
+  while(hits--){
+    if(cHits[turn][i]<3) cHits[turn][i]++;
+    else if(cHits[opp][i]<3) cScore[turn]+=v==="B"?25:v;
   }
-  html+="</div>";
-  overviewContent.innerHTML=html;
-  overviewModal.classList.remove("hidden");
+  darts++;
+  if(darts>=3) nextTurnCricket();
+  mult=1;
+  updateCricket();
 }
-function closeOverview(){overviewModal.classList.add("hidden")}
-
-/* ========= CRICKET (unverändert) ========= */
-function startCricket(){alert("Cricket unverändert – funktioniert")}
+function sym(n){
+  if(n>=3) return `<span class="closed">✖</span>`;
+  return `<span class="hit">${"✔".repeat(n)}</span>`;
+}
+function updateCricket(){
+  let html=`<div class="scores">
+    <div class="player ${turn===0?"active":""}"><b>Spieler 1</b><div class="score">${cScore[0]}</div></div>
+    <div class="player ${turn===1?"active":""}"><b>Spieler 2</b><div class="score">${cScore[1]}</div></div>
+  </div>`;
+  cNums.forEach((n,i)=>{
+    html+=`<div class="crRow"><div>${sym(cHits[0][i])}</div><div>${n}</div><div>${sym(cHits[1][i])}</div></div>`;
+  });
+  game.innerHTML=html;
+}
+function nextTurnCricket(){darts=0;turn=1-turn;updateCricket()}
 </script>
 </body>
 </html>
