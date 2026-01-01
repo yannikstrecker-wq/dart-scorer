@@ -6,14 +6,17 @@
 <title>Dart App</title>
 
 <!--
-DART APP – v1.3.0-dev
+DART APP – v1.3.0-dev (FULL)
 ✔ 501 Einzel
 ✔ Cricket (Original + ✖ bei geschlossen)
-✔ 501 Turnier:
-   - Gruppen (1–2)
-   - immer Best of 3 Legs
-   - Halbfinale, Spiel um Platz 3, Finale
-   - Turnier-Übersicht (Pop-up)
+✔ 501 Turnier PRO:
+   - 1–2 Gruppen
+   - überall Best of 3 Legs
+   - Halbfinale
+   - Spiel um Platz 3
+   - Finale
+   - Podium
+✔ Turnierübersicht (Pop-up, fix)
 -->
 
 <style>
@@ -33,12 +36,11 @@ body{
 }
 .app{max-width:1200px;margin:auto}
 .panel{background:#111;padding:12px;border-radius:14px;margin-bottom:12px}
-.hidden{display:none}
+.hidden{display:none !important}
 
 /* HEADER */
 .header{
   display:flex;
-  gap:8px;
   justify-content:space-between;
   align-items:center;
   border:2px solid var(--gold);
@@ -151,7 +153,7 @@ body{
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:999;
+  z-index:1000;
 }
 .modalBox{
   background:#000;
@@ -172,6 +174,7 @@ body{
   font-weight:900;
   border-radius:8px;
   color:#fff;
+  cursor:pointer;
 }
 </style>
 </head>
@@ -222,9 +225,9 @@ body{
 
 </div>
 
-<!-- MODAL -->
-<div id="overviewModal" class="modal hidden">
-  <div class="modalBox">
+<!-- TURNIERÜBERSICHT MODAL -->
+<div id="overviewModal" class="modal hidden" onclick="closeOverview()">
+  <div class="modalBox" onclick="event.stopPropagation()">
     <button class="closeBtn" onclick="closeOverview()">X</button>
     <h2>Turnierübersicht</h2>
     <div id="overviewContent"></div>
@@ -233,17 +236,13 @@ body{
 
 <script>
 /* ============================================================
-   HINWEIS
-   Der Code ist bewusst lang, aber vollständig & stabil.
-   Turnier-Logik, Cricket und 501 sind klar getrennt.
+   BASIS 501 / TURNIER / CRICKET
    ============================================================ */
 
-/* ========= BASIS / 501 ========= */
+/* ========= BASIS ========= */
 let mode=null, turn=0, mult=1, darts=0;
-let players=[], scores=[501,501];
-let legs=[0,0];
-let log=[[],[]], roundLog=[[],[]], lastRound=[[],[]];
-let hist=[];
+let players=[], scores=[501,501], legs=[0,0];
+let log=[[],[]], roundLog=[[],[]], lastRound=[[],[]], hist=[];
 
 /* ========= NUMPAD ========= */
 const nums=document.getElementById("nums");
@@ -272,9 +271,7 @@ function start501(){
 }
 
 /* ========= TURNIER ========= */
-let tournament=null;
-let phase="group";
-let currentMatch=null;
+let tournament=null, phase="group", currentMatch=null;
 
 function startTournament(){
   let count=+prompt("Anzahl Spieler (4–8)","4");
@@ -295,8 +292,6 @@ function startTournament(){
     groupResults:[],
     ko:[],
     koResults:[],
-    third:null,
-    final:null,
     podium:{}
   };
 
@@ -441,7 +436,6 @@ function endMatch(winner){
   if(phase==="final"){
     tournament.podium.first=winner;
     tournament.podium.second=loser;
-    phase="podium";
     showPodium();
   }
 }
@@ -495,7 +489,7 @@ function showPodium(){
   input.classList.add("hidden");
 }
 
-/* ========= OVERVIEW POPUP ========= */
+/* ========= ÜBERSICHT POPUP ========= */
 function openOverview(){
   if(!tournament){alert("Kein Turnier aktiv");return;}
   let html="<h3>Gruppenphase</h3>";
@@ -506,7 +500,7 @@ function openOverview(){
   tournament.koResults.forEach(m=>{
     html+=`${m.a} vs ${m.b} – ${m.res}<br>`;
   });
-  overviewContent.innerHTML=html || "Noch keine Spiele";
+  overviewContent.innerHTML=html||"Noch keine Spiele";
   overviewModal.classList.remove("hidden");
 }
 function closeOverview(){
