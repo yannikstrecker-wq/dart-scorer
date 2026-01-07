@@ -11,6 +11,8 @@
   --red:#b8322a;
   --gold:#d4af37;
   --text:#f5f5f5;
+  --me:#ffd700;
+  --enemy:#bbb;
 }
 *{box-sizing:border-box}
 body{
@@ -47,6 +49,8 @@ body{
   border-radius:12px;padding:10px;
 }
 .player.active{border-color:var(--gold)}
+.player.me{color:var(--me);border-color:var(--me)}
+.player.enemy{color:var(--enemy)}
 .score{font-size:42px;font-weight:900}
 .avg{font-size:14px;color:#ffd700}
 .log{font-size:12px;opacity:.85}
@@ -148,7 +152,6 @@ body{
 <div id="game" class="panel hidden"></div>
 
 <div id="input" class="panel hidden">
-  <!-- 501 / Cricket -->
   <div id="controls501">
     <div class="controls">
       <button class="ctrl active" onclick="setMult(1)">S</button>
@@ -168,7 +171,6 @@ body{
     </div>
   </div>
 
-  <!-- ATC -->
   <div id="controlsATC" class="hidden">
     <div class="atcNums" id="atcNums"></div>
   </div>
@@ -211,7 +213,7 @@ function build501Numbers(){
   });
 }
 
-/* ================= 501 ================= */
+/* ================= 501 EINZEL ================= */
 function start501(){
   tournament=null;
   phase=null;
@@ -221,8 +223,59 @@ function start501(){
 /* ================= TURNIER ================= */
 let tournament=null, phase="group", currentMatch=null;
 
-/* (Turnierfunktionen unverändert – exakt aus deiner Basis) */
-/* ... bewusst nicht erneut kommentiert ... */
+function startTournament(){
+  let count=+prompt("Anzahl Spieler (4–8)","4");
+  if(count<4||count>8) return;
+  let groups=+prompt("Gruppen? 1 oder 2","1");
+  if(groups!==1&&groups!==2) groups=1;
+
+  let names=[];
+  for(let i=0;i<count;i++) names.push(prompt("Name Spieler "+(i+1),"Spieler "+(i+1)));
+
+  tournament={groups:[],tables:[],groupMatches:[],groupResults:[],ko:[],koResults:[],podium:{}};
+
+  if(groups===1) tournament.groups=[names];
+  else{
+    tournament.groups=[[],[]];
+    names.forEach((n,i)=>tournament.groups[i%2].push(n));
+  }
+
+  tournament.groups.forEach((g,gi)=>{
+    let table={};
+    g.forEach(n=>table[n]={p:0,w:0,l:0});
+    tournament.tables.push(table);
+    for(let i=0;i<g.length;i++){
+      for(let j=i+1;j<g.length;j++){
+        tournament.groupMatches.push({a:g[i],b:g[j],g:gi,res:null});
+      }
+    }
+  });
+
+  phase="group";
+  nextGroupMatch();
+}
+
+function nextGroupMatch(){
+  renderTables();
+  if(!tournament.groupMatches.length){
+    buildKO(); phase="ko"; nextKOMatch(); return;
+  }
+  currentMatch=tournament.groupMatches.shift();
+  startMatch("501 – Gruppe",[currentMatch.a,currentMatch.b]);
+}
+
+function nextKOMatch(){
+  if(tournament.ko.length){
+    currentMatch=tournament.ko.shift();
+    startMatch("501 – Halbfinale",[currentMatch.a,currentMatch.b]);
+  }else if(phase==="ko"){
+    phase="third";
+    startMatch("Spiel um Platz 3",[tournament.third.a,tournament.third.b]);
+  }else if(phase==="third"){
+    phase="final";
+    startMatch("Finale",[tournament.final.a,tournament.final.b]);
+  }else showPodium();
+}
 
 /* ================= MATCH ================= */
 function startMatch(title,names){
@@ -235,6 +288,7 @@ function startMatch(title,names){
   turn=0; darts=0;
 
   menu.classList.add("hidden");
+  tournamentPanel.classList.remove("hidden");
   game.classList.remove("hidden");
   input.classList.remove("hidden");
   document.getElementById("controls501").classList.remove("hidden");
@@ -263,8 +317,8 @@ function throwDart(v){
   if(n===0){
     legs[turn]++;
     if(legs[turn]===2){
-      alert(players[turn]+" gewinnt!");
-      location.reload();
+      if(tournament) endMatch(players[turn]);
+      else{alert(players[turn]+" gewinnt!");location.reload();}
       return;
     }
     scores=[501,501];
@@ -285,45 +339,90 @@ function manualInput(){
   manual.value="";
 }
 
-/* ================= COMMON ================= */
-function undo(){
-  if(!hist.length) return;
-  let s=JSON.parse(hist.pop());
-  scores=s.scores; legs=s.legs;
-  log=s.log; roundLog=s.roundLog; lastRound=s.lastRound;
-  turn=s.turn; darts=s.darts;
-  update();
+/* ================= MATCH ENDE ================= */
+function endMatch(winner){
+  let loser=players[0]===winner?players[1]:players[0];
+  let res=`${legs[0]} : ${legs[1]}`;
+
+  if(phase==="group"){
+    let t=tournament.tables[currentMatch.g];
+    t[winner].w++; t[winner].p+=2; t[loser].l++;
+    currentMatch.res=res;
+    tournament.groupResults.push({...currentMatch});
+    nextGroupMatch(); return;
+  }
+  if(phase==="ko"){
+    tournament.koResults.push({a:players[0],b:players[1],res});
+    tournament.third={a:loser,b:null};
+    tournament.final={a:winner,b:null};
+    nextKOMatch(); return;
+  }
+  if(phase==="third"){
+    tournament.podium.third=winner;
+    tournament.final.b=loser;
+    nextKOMatch(); return;
+  }
+  if(phase==="final"){
+    tournament.podium.first=winner;
+    tournament.podium.second=loser;
+    showPodium();
+  }
 }
-function nextTurn(){
-  darts=0;
-  lastRound[turn]=[...roundLog[turn]];
-  roundLog[turn]=[];
-  turn=1-turn;
-  update();
+
+/* ================= TABELLEN ================= */
+function renderTables(){
+  let html="";
+  tournament.groups.forEach((g,i)=>{
+    let t=tournament.tables[i];
+    html+=`<h3>Gruppe ${String.fromCharCode(65+i)}</h3>
+    <table class="table"><tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>`;
+    Object.entries(t).sort((a,b)=>b[1].p-a[1].p)
+      .forEach(([n,d],idx)=>{
+        html+=`<tr class="${idx<2?'mark':''}">
+        <td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td></tr>`;
+      });
+    html+=`</table>`;
+  });
+  tournamentPanel.innerHTML=html;
 }
-function nextPlayer(){nextTurn()}
-function prevPlayer(){nextTurn()}
-function avg(i){
-  let sum=log[i].reduce((a,b)=>a+b,0);
-  return log[i].length?((sum/log[i].length)*3).toFixed(1):"0.0";
+
+/* ================= KO ================= */
+function buildKO(){
+  let q=[];
+  if(tournament.groups.length===1){
+    let r=Object.entries(tournament.tables[0]).sort((a,b)=>b[1].p-a[1].p).map(x=>x[0]);
+    q=[[r[0],r[3]],[r[1],r[2]]];
+  }else{
+    let rA=Object.entries(tournament.tables[0]).sort((a,b)=>b[1].p-a[1].p).map(x=>x[0]);
+    let rB=Object.entries(tournament.tables[1]).sort((a,b)=>b[1].p-a[1].p).map(x=>x[0]);
+    q=[[rA[0],rB[1]],[rB[0],rA[1]]];
+  }
+  tournament.ko=[{a:q[0][0],b:q[0][1]},{a:q[1][0],b:q[1][1]}];
 }
-function update(){
+
+/* ================= PODIUM ================= */
+function showPodium(){
   game.innerHTML=`
   <div class="scores">
-    <div class="player ${turn===0?"active":""}">
-      <b>${players[0]}</b>
-      <div class="avg">Ø ${avg(0)} | Legs ${legs[0]}</div>
-      <div class="score">${scores[0]}</div>
-      <div class="log">${(turn===0?roundLog[0]:lastRound[0]).join(" · ")}</div>
-    </div>
-    <div class="player ${turn===1?"active":""}">
-      <b>${players[1]}</b>
-      <div class="avg">Ø ${avg(1)} | Legs ${legs[1]}</div>
-      <div class="score">${scores[1]}</div>
-      <div class="log">${(turn===1?roundLog[1]:lastRound[1]).join(" · ")}</div>
-    </div>
-  </div>`;
+    <div class="player">🥇<br>${tournament.podium.first}</div>
+    <div class="player">🥈<br>${tournament.podium.second}</div>
+    <div class="player">🥉<br>${tournament.podium.third}</div>
+  </div>
+  <button class="btn green" onclick="location.reload()">Neues Turnier</button>`;
+  input.classList.add("hidden");
 }
+
+/* ================= ÜBERSICHT ================= */
+function openOverview(){
+  if(!tournament){alert("Kein Turnier aktiv");return;}
+  let html="<h3>Gruppenphase</h3>";
+  tournament.groupResults.forEach(m=>html+=`${m.a} vs ${m.b} – ${m.res}<br>`);
+  html+="<h3>KO-Phase</h3>";
+  tournament.koResults.forEach(m=>html+=`${m.a} vs ${m.b} – ${m.res}<br>`);
+  overviewContent.innerHTML=html||"Noch keine Spiele";
+  overviewModal.classList.remove("hidden");
+}
+function closeOverview(){overviewModal.classList.add("hidden");}
 
 /* ================= CRICKET ================= */
 const cNums=[20,19,18,17,16,15,"B"];
@@ -390,16 +489,13 @@ function updateCricket(){
   });
   game.innerHTML=html;
 }
-function nextTurnCricket(){
-  darts=0;
-  turn=1-turn;
-  updateCricket();
-}
+function nextTurnCricket(){darts=0;turn=1-turn;updateCricket();}
 
 /* ================= ATC ================= */
 let atcPlayers=2;
 let atcIndex=[0,0];
 let atcDarts=0;
+let atcTotal=[0,0];
 const ATC_SEQ=[...Array(20).keys()].map(i=>i+1).concat(["B"]);
 
 function startATC(){
@@ -409,6 +505,7 @@ function startATC(){
   players=atcPlayers===1?["Spieler"]:["Spieler 1","Spieler 2"];
   atcIndex=[0,0];
   atcDarts=0;
+  atcTotal=[0,0];
   turn=0;
   mode="atc";
 
@@ -444,16 +541,17 @@ function updateATCButtons(){
 function atcHit(){
   atcIndex[turn]++;
   atcDarts++;
+  atcTotal[turn]++;
   if(atcIndex[turn]>=ATC_SEQ.length){
     alert(players[turn]+" gewinnt Around the Clock!");
-    location.reload();
-    return;
+    location.reload(); return;
   }
   if(atcDarts>=3) nextATCTurn();
   updateATC();
 }
 function atcBust(){
   atcDarts++;
+  atcTotal[turn]++;
   if(atcDarts>=3) nextATCTurn();
   updateATC();
 }
@@ -466,10 +564,13 @@ function updateATC(){
   game.innerHTML=`
     <div class="scores">
       ${players.map((p,i)=>`
-        <div class="player ${turn===i?"active":""}">
+        <div class="player ${i===turn?'me':'enemy'}">
           <b>${p}</b>
           <div class="score">${ATC_SEQ[atcIndex[i]]||"FERTIG"}</div>
-          <div class="log">Pfeile: ${turn===i?atcDarts:"–"}</div>
+          <div class="log">
+            Pfeile Runde: ${i===turn?atcDarts:'–'}<br>
+            Gesamt: ${atcTotal[i]}
+          </div>
         </div>
       `).join("")}
     </div>`;
