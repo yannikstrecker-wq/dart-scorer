@@ -192,6 +192,30 @@ body{
 let mode=null, turn=0, mult=1, darts=0;
 let players=[], scores=[501,501], legs=[0,0];
 let log=[[],[]], roundLog=[[],[]], lastRound=[[],[]], hist=[];
+let tournament=null, phase=null, currentMatch=null;
+
+/* ================= AVG ================= */
+function getAvg(p){
+  let d = log[p].length;
+  if(d===0) return "0.0";
+  let s = log[p].reduce((a,b)=>a+b,0);
+  return ((s/d)*3).toFixed(1);
+}
+
+/* ================= UPDATE (501 & TURNIER) ================= */
+function update(){
+  game.innerHTML=`
+    <div class="scores">
+      ${players.map((p,i)=>`
+        <div class="player ${i===turn?'active':''}">
+          <b>${p}</b>
+          <div class="score">${scores[i]}</div>
+          <div class="avg">Avg: ${getAvg(i)}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
 
 /* ================= NUMPAD ================= */
 const nums=document.getElementById("nums");
@@ -221,8 +245,6 @@ function start501(){
 }
 
 /* ================= TURNIER ================= */
-let tournament=null, phase="group", currentMatch=null;
-
 function startTournament(){
   let count=+prompt("Anzahl Spieler (4–8)","4");
   if(count<4||count>8) return;
@@ -308,7 +330,8 @@ function setMult(m){
 
 function throwDart(v){
   hist.push(JSON.stringify({scores,legs,log,roundLog,lastRound,turn,darts}));
-  log[turn].push(v); roundLog[turn].push(v);
+  log[turn].push(v);
+  roundLog[turn].push(v);
 
   const n=scores[turn]-v;
   if(n<0||(n===0&&v%2!==0)){undo();nextTurn();return;}
@@ -338,6 +361,17 @@ function manualInput(){
   if(v>=0&&v<=180) throwDart(v);
   manual.value="";
 }
+
+/* ================= UNDO / TURN ================= */
+function undo(){
+  if(!hist.length) return;
+  let s=JSON.parse(hist.pop());
+  scores=s.scores; legs=s.legs; log=s.log;
+  roundLog=s.roundLog; lastRound=s.lastRound;
+  turn=s.turn; darts=s.darts;
+  update();
+}
+function nextTurn(){darts=0;turn=1-turn;update();}
 
 /* ================= MATCH ENDE ================= */
 function endMatch(winner){
@@ -374,12 +408,18 @@ function renderTables(){
   let html="";
   tournament.groups.forEach((g,i)=>{
     let t=tournament.tables[i];
-    html+=`<h3>Gruppe ${String.fromCharCode(65+i)}</h3>
-    <table class="table"><tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>`;
+    html+=`
+      <h3>Gruppe ${String.fromCharCode(65+i)}</h3>
+      <table class="table">
+        <tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>
+    `;
     Object.entries(t).sort((a,b)=>b[1].p-a[1].p)
       .forEach(([n,d],idx)=>{
-        html+=`<tr class="${idx<2?'mark':''}">
-        <td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td></tr>`;
+        html+=`
+          <tr class="${idx<2?'mark':''}">
+            <td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td>
+          </tr>
+        `;
       });
     html+=`</table>`;
   });
@@ -403,12 +443,13 @@ function buildKO(){
 /* ================= PODIUM ================= */
 function showPodium(){
   game.innerHTML=`
-  <div class="scores">
-    <div class="player">🥇<br>${tournament.podium.first}</div>
-    <div class="player">🥈<br>${tournament.podium.second}</div>
-    <div class="player">🥉<br>${tournament.podium.third}</div>
-  </div>
-  <button class="btn green" onclick="location.reload()">Neues Turnier</button>`;
+    <div class="scores">
+      <div class="player">🥇<br>${tournament.podium.first}</div>
+      <div class="player">🥈<br>${tournament.podium.second}</div>
+      <div class="player">🥉<br>${tournament.podium.third}</div>
+    </div>
+    <button class="btn green" onclick="location.reload()">Neues Turnier</button>
+  `;
   input.classList.add("hidden");
 }
 
@@ -416,9 +457,13 @@ function showPodium(){
 function openOverview(){
   if(!tournament){alert("Kein Turnier aktiv");return;}
   let html="<h3>Gruppenphase</h3>";
-  tournament.groupResults.forEach(m=>html+=`${m.a} vs ${m.b} – ${m.res}<br>`);
+  tournament.groupResults.forEach(m=>{
+    html+=`${m.a} vs ${m.b} – ${m.res}<br>`;
+  });
   html+="<h3>KO-Phase</h3>";
-  tournament.koResults.forEach(m=>html+=`${m.a} vs ${m.b} – ${m.res}<br>`);
+  tournament.koResults.forEach(m=>{
+    html+=`${m.a} vs ${m.b} – ${m.res}<br>`;
+  });
   overviewContent.innerHTML=html||"Noch keine Spiele";
   overviewModal.classList.remove("hidden");
 }
@@ -465,27 +510,31 @@ function throwCricket(v){
   mult=1;
   updateCricket();
 }
+
 function sym(n){
   if(n>=3) return `<span class="closed">✖</span>`;
   return `<span class="hit">${"✔".repeat(n)}</span>`;
 }
+
 function updateCricket(){
   let html=`
-  <div class="scores">
-    <div class="player ${turn===0?"active":""}">
-      <b>Spieler 1</b><div class="score">${cScore[0]}</div>
+    <div class="scores">
+      <div class="player ${turn===0?"active":""}">
+        <b>Spieler 1</b><div class="score">${cScore[0]}</div>
+      </div>
+      <div class="player ${turn===1?"active":""}">
+        <b>Spieler 2</b><div class="score">${cScore[1]}</div>
+      </div>
     </div>
-    <div class="player ${turn===1?"active":""}">
-      <b>Spieler 2</b><div class="score">${cScore[1]}</div>
-    </div>
-  </div>`;
+  `;
   cNums.forEach((n,i)=>{
     html+=`
-    <div class="crRow">
-      <div>${sym(cHits[0][i])}</div>
-      <div>${n}</div>
-      <div>${sym(cHits[1][i])}</div>
-    </div>`;
+      <div class="crRow">
+        <div>${sym(cHits[0][i])}</div>
+        <div>${n}</div>
+        <div>${sym(cHits[1][i])}</div>
+      </div>
+    `;
   });
   game.innerHTML=html;
 }
@@ -534,10 +583,12 @@ function buildATCControls(){
   c.appendChild(bust);
   updateATCButtons();
 }
+
 function updateATCButtons(){
   const t=ATC_SEQ[atcIndex[turn]];
   document.querySelector(".atcBtn").textContent=t==="B"?"BULL":"TREFFE "+t;
 }
+
 function atcHit(){
   atcIndex[turn]++;
   atcDarts++;
@@ -549,17 +600,20 @@ function atcHit(){
   if(atcDarts>=3) nextATCTurn();
   updateATC();
 }
+
 function atcBust(){
   atcDarts++;
   atcTotal[turn]++;
   if(atcDarts>=3) nextATCTurn();
   updateATC();
 }
+
 function nextATCTurn(){
   atcDarts=0;
   if(atcPlayers===2) turn=1-turn;
   updateATCButtons();
 }
+
 function updateATC(){
   game.innerHTML=`
     <div class="scores">
@@ -573,7 +627,8 @@ function updateATC(){
           </div>
         </div>
       `).join("")}
-    </div>`;
+    </div>
+  `;
   updateATCButtons();
 }
 </script>
