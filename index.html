@@ -3,46 +3,61 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dart Turnier – 501</title>
+<title>Dart Turnier – 501 | Version 2</title>
 
 <style>
-body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10px}
-.panel{background:#111;padding:12px;border-radius:12px;margin-bottom:12px}
-.hidden{display:none!important;pointer-events:none!important}
+:root{
+  --green:#1e7f4f;
+  --red:#b8322a;
+  --gold:#d4af37;
+  --text:#f5f5f5;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:radial-gradient(circle at top,#1b5e3a 0%,#050806 70%);
+  font-family:system-ui;
+  color:var(--text);
+  padding:10px;
+}
+.panel{background:#111;padding:12px;border-radius:14px;margin-bottom:12px}
+.hidden{display:none!important}
 .header{
-  border:2px solid #d4af37;border-radius:12px;padding:10px;background:#000;
-  display:flex;justify-content:space-between;align-items:center;gap:6px
+  display:flex;justify-content:space-between;align-items:center;
+  border:2px solid var(--gold);border-radius:14px;
+  padding:10px;background:#000
 }
 .ctrl,.num,input{
-  padding:10px;font-weight:900;background:#000;color:#fff;
-  border:2px solid #0f5d35;border-radius:8px;cursor:pointer
+  padding:10px;font-weight:900;border-radius:10px;
+  border:2px solid #0f5d35;background:#000;color:#eee;
+  cursor:pointer
 }
-.ctrl.active{background:#d4af37;color:#000}
-.ctrl.zero{border-color:#b8322a;color:#ff6b6b}
+.ctrl.active{background:var(--gold);color:#000}
+.ctrl.zero{border-color:#777;color:#aaa}
 .scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.player{border:2px solid #0f5d35;border-radius:10px;padding:10px}
-.player.active{border-color:#d4af37}
-.score{font-size:40px;font-weight:900}
+.player{
+  background:#000;border:2px solid #0f5d35;
+  border-radius:12px;padding:10px;cursor:pointer
+}
+.player.active{border-color:var(--gold)}
+.score{font-size:42px;font-weight:900}
 .avg{font-size:14px;color:#ffd700}
-.log{font-size:12px}
+.log{font-size:12px;opacity:.85;min-height:16px}
 .controls,.numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{border-bottom:1px solid #333;padding:6px;text-align:center}
-.table th{color:#d4af37}
-.table td.click{cursor:pointer;color:#ffd700}
-.table td.click:hover{text-decoration:underline}
-
-/* Popups */
+.table th{color:var(--gold)}
 .modal{
   position:fixed;inset:0;background:rgba(0,0,0,.85);
-  display:flex;align-items:center;justify-content:center;z-index:999
+  display:flex;align-items:center;justify-content:center;z-index:1000
 }
 .modalBox{
-  background:#000;border:2px solid #d4af37;
+  background:#000;border:2px solid var(--gold);
   border-radius:14px;padding:20px;
-  max-width:520px;width:100%;text-align:center;font-weight:900
+  max-width:650px;width:100%;
+  text-align:center;font-weight:900
 }
-.modalBox h3{margin-top:0;color:#d4af37}
+.modalBox h3{margin-top:0;color:var(--gold)}
 </style>
 </head>
 
@@ -65,25 +80,25 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
 
 <div id="input" class="panel hidden">
   <div class="controls">
-    <button class="ctrl active" onclick="setMult(1)">S</button>
-    <button class="ctrl" onclick="setMult(2)">D</button>
-    <button class="ctrl" onclick="setMult(3)">T</button>
-    <button class="ctrl zero" onclick="throwZero()">0</button>
-    <button class="ctrl" onclick="undoLast()">Undo</button>
+    <button id="btnS" class="ctrl active" onclick="setMult(1)">S</button>
+    <button id="btnD" class="ctrl" onclick="setMult(2)">D</button>
+    <button id="btnT" class="ctrl" onclick="setMult(3)">T</button>
+    <button class="ctrl zero" onclick="throwMiss()">0</button>
+    <button class="ctrl" onclick="undo()">Undo</button>
   </div>
   <input id="scoreInput" type="number" placeholder="Punkte (0–180)"
-         onkeydown="if(event.key==='Enter') submitScoreInput()">
+    onkeydown="if(event.key==='Enter')submitScore()">
   <div class="numbers" id="nums"></div>
 </div>
 
-<!-- Bust Overlay -->
+<!-- BUST -->
 <div id="bustOverlay" class="modal hidden">
   <div class="modalBox" style="border-color:#b8322a;color:#ff6b6b;font-size:36px">
     BUST
   </div>
 </div>
 
-<!-- Sieger Popup -->
+<!-- Sieger -->
 <div id="winnerPopup" class="modal hidden">
   <div class="modalBox">
     <h3 id="winnerText"></h3>
@@ -92,16 +107,7 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
   </div>
 </div>
 
-<!-- Matchübersicht -->
-<div id="matchesPopup" class="modal hidden">
-  <div class="modalBox">
-    <h3>📋 Alle Partien</h3>
-    <div id="matchesContent"></div><br>
-    <button class="ctrl" onclick="matchesPopup.classList.add('hidden')">Schließen</button>
-  </div>
-</div>
-
-<!-- Match-Statistik pro Spieler -->
+<!-- Spieler-Stats -->
 <div id="statsPopup" class="modal hidden">
   <div class="modalBox">
     <h3 id="statsName"></h3>
@@ -110,7 +116,7 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
   </div>
 </div>
 
-<!-- Gesamtstatistik -->
+<!-- Gesamt-Stats -->
 <div id="overallStatsPopup" class="modal hidden">
   <div class="modalBox">
     <h3>📊 Gesamtstatistik</h3>
@@ -119,46 +125,46 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
   </div>
 </div>
 
-<!-- Detail Statistik pro Spieler (gesamt) -->
-<div id="overallPlayerPopup" class="modal hidden">
+<!-- Partien -->
+<div id="matchesPopup" class="modal hidden">
   <div class="modalBox">
-    <h3 id="overallPlayerName"></h3>
-    <div id="overallPlayerContent"></div><br>
-    <button class="ctrl" onclick="overallPlayerPopup.classList.add('hidden')">Schließen</button>
+    <h3>📋 Spielübersicht</h3>
+    <div id="matchesContent"></div><br>
+    <button class="ctrl" onclick="matchesPopup.classList.add('hidden')">Schließen</button>
   </div>
 </div>
 
 <script>
 /* ================= STATE ================= */
-let players=[], scores=[501,501], legs=[0,0];
-let turn=0, darts=0, mult=1;
-let roundLog=[[],[]], totalPoints=[0,0], totalDarts=[0,0];
-let busts=[0,0];
+let players=[],scores=[501,501],legs=[0,0];
+let turn=0,darts=0,mult=1;
+let roundLog=[[],[]],totalPoints=[0,0],totalDarts=[0,0];
+let busts=[0,0],schwarzwald=[0,0];
 let history=[];
-let tournament=null, phase="group", currentMatch=null;
-
-/* Gesamtstatistik über Turnier */
+let tournament=null,currentMatch=null;
 let overallStats={};
+
+/* ================= MULTI ================= */
+function resetMult(){
+  mult=1;
+  btnS.classList.add("active");
+  btnD.classList.remove("active");
+  btnT.classList.remove("active");
+}
+function setMult(m){
+  mult=m;
+  btnS.classList.toggle("active", m===1);
+  btnD.classList.toggle("active", m===2);
+  btnT.classList.toggle("active", m===3);
+}
 
 /* ================= UTILS ================= */
 const next=i=>(i+1)%2;
 function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
-function resetMult(){
-  mult=1;
-  document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));
-  document.querySelectorAll(".ctrl")[0].classList.add("active");
-}
-function showBust(){
-  bustOverlay.classList.remove("hidden");
-  setTimeout(()=>bustOverlay.classList.add("hidden"),700);
-}
+function getAvg(p,d){return d?((p/d)*3).toFixed(1):"0.0"}
+function showBust(){bustOverlay.classList.remove("hidden");setTimeout(()=>bustOverlay.classList.add("hidden"),700)}
 
 /* ================= UI ================= */
-function setMult(m){
-  mult=m;
-  document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));
-  document.querySelectorAll(".ctrl")[m-1].classList.add("active");
-}
 function buildNums(){
   nums.innerHTML="";
   for(let i=0;i<=20;i++){
@@ -167,15 +173,12 @@ function buildNums(){
     b.onclick=()=>throwDart(i*mult);
     nums.appendChild(b);
   }
-  ["Bull","DBull"].forEach((t,i)=>{
+  [["Bull",25],["DBull",50]].forEach(x=>{
     let b=document.createElement("button");
-    b.className="num";b.textContent=t;
-    b.onclick=()=>throwDart(i?50:25);
+    b.className="num";b.textContent=x[0];
+    b.onclick=()=>throwDart(x[1]);
     nums.appendChild(b);
   });
-}
-function getAvgFrom(points,darts){
-  return darts?((points/darts)*3).toFixed(1):"0.0";
 }
 function updateGame(){
   game.innerHTML=`
@@ -185,45 +188,41 @@ function updateGame(){
           <b>${p}</b>
           <div class="log">${roundLog[i].join(" | ")}</div>
           <div class="score">${scores[i]}</div>
-          <div class="avg">Avg: ${getAvgFrom(totalPoints[i],totalDarts[i])} | Legs: ${legs[i]}</div>
+          <div class="avg">
+            Avg: ${getAvg(totalPoints[i],totalDarts[i])}
+            | Legs: ${legs[i]}
+          </div>
         </div>`).join("")}
     </div>`;
 }
 
-/* ================= POPUPS ================= */
-function showWinnerPopup(winner,nextText){
-  winnerText.textContent=`🏆 Sieger: ${winner}`;
-  nextMatchText.innerHTML=nextText;
-  winnerPopup.classList.remove("hidden");
-}
-function closeWinnerPopup(){
-  winnerPopup.classList.add("hidden");
-  proceedAfterMatch();
-}
-
-/* ================= Match- & Gesamt-Statistiken ================= */
+/* ================= STATISTIK ================= */
 function openPlayerStats(i){
-  statsName.textContent = players[i];
-  statsContent.innerHTML = `
-    🎯 Average: <b>${getAvgFrom(totalPoints[i],totalDarts[i])}</b><br>
-    🏹 Darts gesamt: <b>${totalDarts[i]}</b><br>
-    📊 Punkte gesamt: <b>${totalPoints[i]}</b><br>
-    ❌ Busts: <b>${busts[i]}</b>
+  statsName.textContent=players[i];
+  statsContent.innerHTML=`
+    🎯 Average: <b>${getAvg(totalPoints[i],totalDarts[i])}</b><br>
+    🏹 Darts: <b>${totalDarts[i]}</b><br>
+    📊 Punkte: <b>${totalPoints[i]}</b><br>
+    ❌ Busts: <b>${busts[i]}</b><br>
+    🌲 Schwarzwald: <b>${schwarzwald[i]}</b>
   `;
   statsPopup.classList.remove("hidden");
 }
-
 function openOverallStats(){
   let html=`<table class="table">
-    <tr><th>Spieler</th><th>Avg</th><th>Darts</th><th>Punkte</th><th>Busts</th><th>Siege</th></tr>`;
-  Object.entries(overallStats).forEach(([name,s])=>{
+    <tr>
+      <th>Spieler</th><th>Avg</th><th>Darts</th>
+      <th>Punkte</th><th>Busts</th><th>Schwarzwald</th><th>Siege</th>
+    </tr>`;
+  Object.entries(overallStats).forEach(([n,s])=>{
     html+=`
       <tr>
-        <td class="click" onclick="openOverallPlayerStats('${name}')">${name}</td>
-        <td>${getAvgFrom(s.points,s.darts)}</td>
+        <td>${n}</td>
+        <td>${getAvg(s.points,s.darts)}</td>
         <td>${s.darts}</td>
         <td>${s.points}</td>
         <td>${s.busts}</td>
+        <td>${s.schwarzwald}</td>
         <td>${s.wins}</td>
       </tr>`;
   });
@@ -231,71 +230,65 @@ function openOverallStats(){
   overallStatsContent.innerHTML=html;
   overallStatsPopup.classList.remove("hidden");
 }
-function openOverallPlayerStats(name){
-  const s=overallStats[name];
-  overallPlayerName.textContent=`👤 ${name}`;
-  overallPlayerContent.innerHTML=`
-    🎯 Average gesamt: <b>${getAvgFrom(s.points,s.darts)}</b><br>
-    🏹 Darts gesamt: <b>${s.darts}</b><br>
-    📊 Punkte gesamt: <b>${s.points}</b><br>
-    ❌ Busts: <b>${s.busts}</b><br>
-    🎮 Spiele: <b>${s.games}</b><br>
-    🏆 Siege: <b>${s.wins}</b>
-  `;
-  overallPlayerPopup.classList.remove("hidden");
-}
 
 /* ================= SPIEL ================= */
-function saveHistory(){
+function save(){
   history.push(JSON.stringify({
     scores:[...scores],legs:[...legs],
     roundLog:roundLog.map(r=>[...r]),
     totalPoints:[...totalPoints],totalDarts:[...totalDarts],
-    busts:[...busts],turn,darts
+    busts:[...busts],schwarzwald:[...schwarzwald],
+    turn,darts
   }));
 }
-function undoLast(){
-  if(!history.length) return;
+function undo(){
+  if(!history.length)return;
   let s=JSON.parse(history.pop());
   scores=s.scores;legs=s.legs;roundLog=s.roundLog;
   totalPoints=s.totalPoints;totalDarts=s.totalDarts;
-  busts=s.busts;turn=s.turn;darts=s.darts;
-  resetMult();updateGame();
+  busts=s.busts;schwarzwald=s.schwarzwald;
+  turn=s.turn;darts=s.darts;
+  resetMult();
+  updateGame();
 }
-function throwZero(){
-  saveHistory();
-  busts[turn]++;
-  totalDarts[turn]+=(3-darts);
-  showBust();
-  roundLog[turn]=[];
-  darts=0;turn=next(turn);
-  resetMult();updateGame();
+function throwMiss(){
+  save();
+  schwarzwald[turn]++;
+  totalDarts[turn]++;
+  roundLog[turn].push(0);
+  resetMult();
+  if(++darts>=3){darts=0;roundLog[turn]=[];turn=next(turn)}
+  updateGame();
+}
+function submitScore(){
+  let v=+scoreInput.value;
+  if(!isNaN(v))throwDart(v);
+  scoreInput.value="";
 }
 function throwDart(v){
-  saveHistory();
+  save();
   let ns=scores[turn]-v;
+  resetMult();
   if(ns<0||ns===1||(ns===0&&v%2!==0)){
     busts[turn]++;
-    totalDarts[turn]+=(3-darts);
     showBust();
     roundLog[turn]=[];
     darts=0;turn=next(turn);
-    resetMult();updateGame();
-    return;
+    updateGame();return;
   }
   scores[turn]=ns;
   roundLog[turn].push(v);
   totalPoints[turn]+=v;
   totalDarts[turn]++;
-  resetMult();
   if(ns===0){
     legs[turn]++;
     if(legs[turn]===2){endMatch(players[turn]);return;}
     scores=[501,501];roundLog=[[],[]];
-    darts=0;turn=next(turn);updateGame();return;
+    darts=0;turn=next(turn);
+    updateGame();return;
   }
   if(++darts>=3){
-    darts=0;roundLog[turn]=[];turn=next(turn);
+    darts=0;roundLog[turn]=[];turn=next(turn)
   }
   updateGame();
 }
@@ -303,111 +296,128 @@ function throwDart(v){
 /* ================= TURNIER ================= */
 function startTournament(){
   let names=[];
-  for(let i=1;i<=5;i++) names.push(prompt("Name Spieler "+i,"Spieler "+i));
-  tournament={table:{},matches:[],allMatches:[],finals:{}};
+  for(let i=1;i<=5;i++)names.push(prompt("Name Spieler "+i,"Spieler "+i));
+  tournament={
+    group:[],semi:[],semiWinners:[],semiLosers:[],
+    third:null,final:null,all:[]
+  };
   overallStats={};
   names.forEach(n=>{
-    tournament.table[n]={p:0,w:0,l:0};
-    overallStats[n]={points:0,darts:0,busts:0,wins:0,games:0};
+    overallStats[n]={points:0,darts:0,busts:0,schwarzwald:0,wins:0};
   });
   for(let i=0;i<5;i++)
     for(let j=i+1;j<5;j++)
-      tournament.matches.push({a:names[i],b:names[j],phase:"Gruppe",res:null});
-  shuffle(tournament.matches);
-  tournament.allMatches=[...tournament.matches];
+      tournament.group.push({a:names[i],b:names[j],phase:"Gruppe",res:null});
+  shuffle(tournament.group);
+  tournament.all=[...tournament.group];
   menu.classList.add("hidden");
-  tournamentPanel.classList.remove("hidden");
-  phase="group";
-  nextGroup();
+  renderGroupTable();
+  nextGroupMatch();
 }
-function nextGroup(){
-  renderTable();
-  if(!tournament.matches.length){
-    let r=Object.entries(tournament.table).sort((a,b)=>b[1].p-a[1].p).map(x=>x[0]);
+function nextGroupMatch(){
+  if(!tournament.group.length){
+    renderGroupTable();
+    let played=tournament.all.filter(m=>m.phase==="Gruppe"&&m.res);
+    let stats={};
+    played.forEach(m=>{
+      stats[m.a]=(stats[m.a]||0)+(m.res.startsWith("2")?2:0);
+      stats[m.b]=(stats[m.b]||0)+(m.res.endsWith("2")?2:0);
+    });
+    let ranked=Object.keys(stats).sort((a,b)=>stats[b]-stats[a]);
     tournament.semi=[
-      {a:r[0],b:r[3],phase:"Halbfinale",res:null},
-      {a:r[1],b:r[2],phase:"Halbfinale",res:null}
+      {a:ranked[0],b:ranked[3],phase:"Halbfinale",res:null},
+      {a:ranked[1],b:ranked[2],phase:"Halbfinale",res:null}
     ];
-    tournament.allMatches.push(...tournament.semi);
-    phase="semi";
-    currentMatch=tournament.semi.shift();
-    startMatch(currentMatch);
+    tournament.all.push(...tournament.semi);
+    startMatch(tournament.semi.shift());
     return;
   }
-  currentMatch=tournament.matches.shift();
-  startMatch(currentMatch);
+  startMatch(tournament.group.shift());
 }
 function startMatch(m){
+  currentMatch=m;
   players=[m.a,m.b];
   scores=[501,501];legs=[0,0];
-  roundLog=[[],[]];totalPoints=[0,0];totalDarts=[0,0];busts=[0,0];
+  roundLog=[[],[]];totalPoints=[0,0];totalDarts=[0,0];
+  busts=[0,0];schwarzwald=[0,0];
   history=[];turn=0;darts=0;
   status.textContent=`${m.phase}: ${m.a} vs ${m.b}`;
-  game.classList.remove("hidden");input.classList.remove("hidden");
+  game.classList.remove("hidden");
+  input.classList.remove("hidden");
   buildNums();updateGame();
 }
 function endMatch(winner){
   let loser=players.find(p=>p!==winner);
   currentMatch.res=`${legs[players.indexOf(winner)]}:${legs[players.indexOf(loser)]}`;
-
   players.forEach((p,i)=>{
     overallStats[p].points+=totalPoints[i];
     overallStats[p].darts+=totalDarts[i];
     overallStats[p].busts+=busts[i];
-    overallStats[p].games++;
+    overallStats[p].schwarzwald+=schwarzwald[i];
   });
   overallStats[winner].wins++;
-
   if(currentMatch.phase==="Gruppe"){
-    tournament.table[winner].w++;tournament.table[winner].p+=2;tournament.table[loser].l++;
-    let nextText=tournament.matches.length
-      ? `▶️ Nächstes Spiel:<br>${tournament.matches[0].a} vs ${tournament.matches[0].b}`
-      : `▶️ Nächste Phase:<br>Halbfinale`;
-    showWinnerPopup(winner,nextText);return;
+    renderGroupTable();
+    winnerText.textContent=`🏆 Sieger: ${winner}`;
+    nextMatchText.innerHTML=tournament.group.length
+      ? `▶️ Nächstes Spiel:<br>${tournament.group[0].a} vs ${tournament.group[0].b}`
+      : `▶️ Halbfinale`;
+    winnerPopup.classList.remove("hidden");return;
   }
   if(currentMatch.phase==="Halbfinale"){
-    if(!tournament.finals.f1){tournament.finals.f1=winner;tournament.finals.l1=loser;}
-    else{tournament.finals.f2=winner;tournament.finals.l2=loser;}
-    showWinnerPopup(winner,"▶️ Nächstes Spiel");return;
+    tournament.semiWinners.push(winner);
+    tournament.semiLosers.push(loser);
+    if(tournament.semiWinners.length===2){
+      tournament.third={a:tournament.semiLosers[0],b:tournament.semiLosers[1],phase:"Spiel um Platz 3",res:null};
+      tournament.final={a:tournament.semiWinners[0],b:tournament.semiWinners[1],phase:"Finale",res:null};
+      tournament.all.push(tournament.third,tournament.final);
+    }
+    winnerText.textContent=`🏆 Sieger: ${winner}`;
+    nextMatchText.innerHTML=`▶️ Nächstes Spiel`;
+    winnerPopup.classList.remove("hidden");return;
   }
-  if(currentMatch.phase==="Platz 3"){
-    tournament.finals.third=winner;
-    showWinnerPopup(winner,"▶️ Finale");return;
+  if(currentMatch.phase==="Spiel um Platz 3"){
+    winnerText.textContent=`🥉 Platz 3: ${winner}`;
+    nextMatchText.innerHTML=`▶️ Finale`;
+    winnerPopup.classList.remove("hidden");return;
   }
   if(currentMatch.phase==="Finale"){
-    alert(`🥇 ${winner}\n🥈 ${loser}\n🥉 ${tournament.finals.third}`);
+    alert(`🥇 ${winner}\n🥈 ${loser}`);
     location.reload();
   }
 }
-function proceedAfterMatch(){
-  if(currentMatch.phase==="Gruppe"){nextGroup();return;}
-  if(currentMatch.phase==="Halbfinale"){
-    if(tournament.semi.length){currentMatch=tournament.semi.shift();startMatch(currentMatch);return;}
-    currentMatch={a:tournament.finals.l1,b:tournament.finals.l2,phase:"Platz 3",res:null};
-    tournament.allMatches.push(currentMatch);
-    startMatch(currentMatch);return;
-  }
-  if(currentMatch.phase==="Platz 3"){
-    currentMatch={a:tournament.finals.f1,b:tournament.finals.f2,phase:"Finale",res:null};
-    tournament.allMatches.push(currentMatch);
-    startMatch(currentMatch);
-  }
+function closeWinnerPopup(){
+  winnerPopup.classList.add("hidden");
+  if(currentMatch.phase==="Gruppe")nextGroupMatch();
+  else if(currentMatch.phase==="Halbfinale")startMatch(tournament.semi.shift()||tournament.third);
+  else if(currentMatch.phase==="Spiel um Platz 3")startMatch(tournament.final);
 }
-function renderTable(){
-  let html=`<h3>Gruppentabelle</h3><table class="table">
+function renderGroupTable(){
+  let stats={};
+  tournament.all.filter(m=>m.phase==="Gruppe"&&m.res).forEach(m=>{
+    stats[m.a]??={p:0,w:0,l:0};
+    stats[m.b]??={p:0,w:0,l:0};
+    let [a,b]=m.res.split(":").map(Number);
+    if(a>b){stats[m.a].p+=2;stats[m.a].w++;stats[m.b].l++;}
+    else{stats[m.b].p+=2;stats[m.b].w++;stats[m.a].l++;}
+  });
+  let html=`<h3>📊 Tabelle – Gruppenphase</h3>
+  <table class="table">
     <tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>`;
-  Object.entries(tournament.table)
-    .sort((a,b)=>b[1].p-a[1].p)
-    .forEach(([n,d])=>html+=
-      `<tr><td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td></tr>`);
+  Object.entries(stats).sort((a,b)=>b[1].p-a[1].p)
+    .forEach(([n,s])=>{
+      html+=`<tr><td>${n}</td><td>${s.p}</td><td>${s.w}</td><td>${s.l}</td></tr>`;
+    });
   html+="</table>";
   tournamentPanel.innerHTML=html;
+  tournamentPanel.classList.remove("hidden");
 }
 function openMatches(){
+  if(!tournament){alert("Turnier noch nicht gestartet");return;}
   let html=`<table class="table">
     <tr><th>Phase</th><th>Spiel</th><th>Ergebnis</th></tr>`;
-  tournament.allMatches.forEach(m=>{
-    html+=`<tr><td>${m.phase}</td><td>${m.a} vs ${m.b}</td><td>${m.res||"–"}</td></tr>`;
+  tournament.all.forEach(m=>{
+    html+=`<tr><td>${m.phase}</td><td>${m.a} vs ${m.b}</td><td>${m.res||"-"}</td></tr>`;
   });
   html+="</table>";
   matchesContent.innerHTML=html;
@@ -417,4 +427,3 @@ function openMatches(){
 
 </body>
 </html>
-
