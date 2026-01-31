@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dart Turnier – 501 Best of 3</title>
+<title>Dart Turnier – 501 (5 Spieler)</title>
 
 <style>
 body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10px}
@@ -17,7 +17,7 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
 .avg{font-size:14px;color:#ffd700}
 .log{font-size:12px;opacity:.85;min-height:16px}
 .controls,.numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.ctrl,.num{padding:12px;font-weight:900;background:#000;color:#fff;border:2px solid #0f5d35;border-radius:8px}
+.ctrl,.num,input[type=number]{padding:12px;font-weight:900;background:#000;color:#fff;border:2px solid #0f5d35;border-radius:8px}
 .ctrl.active{background:#d4af37;color:#000}
 .table{width:100%;border-collapse:collapse}
 .table th,.table td{border-bottom:1px solid #333;padding:6px;text-align:center}
@@ -32,7 +32,7 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
 </div>
 
 <div id="menu" class="panel">
-  <button class="ctrl" onclick="startTournament()">501 Turnier starten</button>
+  <button class="ctrl" onclick="startTournament()">501 Turnier starten (5 Spieler)</button>
 </div>
 
 <div id="tournamentPanel" class="panel hidden"></div>
@@ -43,7 +43,13 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
     <button class="ctrl active" onclick="setMult(1)">S</button>
     <button class="ctrl" onclick="setMult(2)">D</button>
     <button class="ctrl" onclick="setMult(3)">T</button>
+    <button class="ctrl" onclick="undoLast()">Undo</button>
   </div>
+
+  <!-- 🔢 Punkte direkt eingeben -->
+  <input type="number" id="scoreInput" min="0" max="180" placeholder="Punkte (0–180)"
+         onkeydown="if(event.key==='Enter') submitScoreInput()">
+
   <div class="numbers" id="nums"></div>
 </div>
 
@@ -52,48 +58,32 @@ body{margin:0;background:#050806;color:#f5f5f5;font-family:system-ui;padding:10p
 let players=[], scores=[501,501], legs=[0,0];
 let turn=0, darts=0, mult=1;
 let roundLog=[[],[]], totalPoints=[0,0], totalDarts=[0,0];
-let tournament=null, currentMatch=null;
-
-/* ================= ROTATION ================= */
-const next = (i,c)=> (i+1)%c;
+let tournament=null, currentMatch=null, phase="group";
+let history=[];
 
 /* ================= UTILS ================= */
-function shuffle(arr){
-  for(let i=arr.length-1;i>0;i--){
-    const j=Math.floor(Math.random()*(i+1));
-    [arr[i],arr[j]]=[arr[j],arr[i]];
-  }
-  return arr;
-}
+const next=i=>(i+1)%2;
+function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
+function resetMult(){mult=1;document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".ctrl")[0].classList.add("active")}
 
 /* ================= UI ================= */
-function setMult(m){
-  mult=m;
-  document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));
-  document.querySelectorAll(".ctrl")[m-1].classList.add("active");
-}
-
+function setMult(m){mult=m;document.querySelectorAll(".ctrl").forEach(b=>b.classList.remove("active"));document.querySelectorAll(".ctrl")[m-1].classList.add("active")}
 function buildNums(){
   nums.innerHTML="";
   for(let i=0;i<=20;i++){
     let b=document.createElement("button");
-    b.className="num"; b.textContent=i;
+    b.className="num";b.textContent=i;
     b.onclick=()=>throwDart(i*mult);
     nums.appendChild(b);
   }
   ["Bull","DBull"].forEach((t,i)=>{
     let b=document.createElement("button");
-    b.className="num"; b.textContent=t;
+    b.className="num";b.textContent=t;
     b.onclick=()=>throwDart(i?50:25);
     nums.appendChild(b);
   });
 }
-
-function getAvg(i){
-  if(!totalDarts[i]) return "0.0";
-  return ((totalPoints[i]/totalDarts[i])*3).toFixed(1);
-}
-
+function getAvg(i){return totalDarts[i]?((totalPoints[i]/totalDarts[i])*3).toFixed(1):"0.0"}
 function updateGame(){
   game.innerHTML=`
     <div class="scores">
@@ -107,116 +97,116 @@ function updateGame(){
     </div>`;
 }
 
-/* ================= SPIELLOGIK ================= */
+/* ================= SPIEL ================= */
 function throwDart(v){
-  let nextScore=scores[turn]-v;
+  saveHistory();
+  let ns=scores[turn]-v;
 
-  // Bust: unter 0, auf 1, oder kein Double-Out
-  if(nextScore<0 || nextScore===1 || (nextScore===0 && v%2!==0)){
+  if(ns<0||ns===1||(ns===0&&v%2!==0)){
     roundLog[turn]=[];
-    endTurn();
-    return;
+    endTurn();resetMult();return;
   }
 
-  scores[turn]=nextScore;
+  scores[turn]=ns;
   roundLog[turn].push(v);
   totalPoints[turn]+=v;
   totalDarts[turn]++;
+  resetMult();
 
-  if(nextScore===0){
+  if(ns===0){
     legs[turn]++;
-    if(legs[turn]===2){
-      endMatch(players[turn]);
-      return;
-    }
-    // Neues Leg
-    scores=[501,501];
-    roundLog=[[],[]];
-    darts=0;
-    turn=next(turn,players.length);
-    updateGame();
-    return;
+    if(legs[turn]===2){endMatch(players[turn]);return;}
+    scores=[501,501];roundLog=[[],[]];darts=0;turn=next(turn);updateGame();return;
   }
 
   if(++darts>=3) endTurn();
   updateGame();
 }
-
-function endTurn(){
-  darts=0;
-  roundLog[turn]=[];
-  turn=next(turn,players.length);
-  updateGame();
+function endTurn(){darts=0;roundLog[turn]=[];turn=next(turn)}
+function saveHistory(){history.push(JSON.stringify({scores:[...scores],legs:[...legs],roundLog:roundLog.map(r=>[...r]),totalPoints:[...totalPoints],totalDarts:[...totalDarts],turn,darts}))}
+function undoLast(){
+  if(!history.length) return;
+  let s=JSON.parse(history.pop());
+  scores=s.scores;legs=s.legs;roundLog=s.roundLog;
+  totalPoints=s.totalPoints;totalDarts=s.totalDarts;
+  turn=s.turn;darts=s.darts;
+  resetMult();updateGame();
 }
 
-/* ================= TURNIER ================= */
+/* 🔢 Punkte direkt eingeben */
+function submitScoreInput(){
+  let v=+scoreInput.value;
+  if(v<0||v>180||isNaN(v)) return;
+  scoreInput.value="";
+  // als EIN Turn werten
+  saveHistory();
+  let ns=scores[turn]-v;
+  if(ns<0||ns===1){endTurn();updateGame();return;}
+  scores[turn]=ns;
+  totalPoints[turn]+=v;
+  totalDarts[turn]+=3;
+  roundLog[turn]=[v];
+  if(ns===0){legs[turn]++; if(legs[turn]===2){endMatch(players[turn]);return;}}
+  endTurn();updateGame();
+}
+
+/* ================= TURNIER (5 Spieler) ================= */
 function startTournament(){
-  let count=+prompt("Anzahl Spieler (4–8)","4");
-  if(count<4||count>8) return;
-
-  let names=[];
-  for(let i=0;i<count;i++) names.push(prompt("Name Spieler "+(i+1),"Spieler "+(i+1)));
-
-  tournament={ table:{}, matches:[] };
-
-  names.forEach(n=>tournament.table[n]={p:0,w:0,l:0});
-
-  for(let i=0;i<names.length;i++)
-    for(let j=i+1;j<names.length;j++)
-      tournament.matches.push({a:names[i],b:names[j]});
-
+  players=[];
+  for(let i=1;i<=5;i++) players.push(prompt("Name Spieler "+i,"Spieler "+i));
+  tournament={table:{},matches:[],semi:[],finals:{}};
+  players.forEach(p=>tournament.table[p]={p:0,w:0,l:0});
+  for(let i=0;i<5;i++)for(let j=i+1;j<5;j++)tournament.matches.push({a:players[i],b:players[j]});
   shuffle(tournament.matches);
-
   menu.classList.add("hidden");
   tournamentPanel.classList.remove("hidden");
-  nextMatch();
+  phase="group";
+  nextGroup();
 }
-
-function nextMatch(){
+function nextGroup(){
   renderTable();
   if(!tournament.matches.length){
-    alert("Turnier beendet");
-    location.reload();
-    return;
+    let ranked=Object.entries(tournament.table).sort((a,b)=>b[1].p-a[1].p).map(x=>x[0]);
+    tournament.semi=[{a:ranked[0],b:ranked[3]},{a:ranked[1],b:ranked[2]}];
+    phase="semi";nextSemi();return;
   }
   currentMatch=tournament.matches.shift();
-  startMatch(currentMatch.a,currentMatch.b);
+  startMatch(currentMatch.a,currentMatch.b,"Gruppe");
 }
-
-function startMatch(a,b){
-  players=[a,b];
-  scores=[501,501];
-  legs=[0,0];
-  roundLog=[[],[]];
-  totalPoints=[0,0];
-  totalDarts=[0,0];
-  turn=0; darts=0;
-
-  status.textContent=`${a} vs ${b} (Best of 3)`;
-  game.classList.remove("hidden");
-  input.classList.remove("hidden");
-  buildNums();
-  updateGame();
+function nextSemi(){
+  if(tournament.semi.length){
+    let m=tournament.semi.shift();
+    startMatch(m.a,m.b,"Halbfinale");return;
+  }
+  phase="third";
+  startMatch(tournament.finals.l1,tournament.finals.l2,"Spiel um Platz 3");
 }
-
+function startMatch(a,b,title){
+  players=[a,b];scores=[501,501];legs=[0,0];
+  roundLog=[[],[]];totalPoints=[0,0];totalDarts=[0,0];
+  history=[];turn=0;darts=0;
+  status.textContent=`${title}: ${a} vs ${b}`;
+  game.classList.remove("hidden");input.classList.remove("hidden");
+  buildNums();updateGame();
+}
 function endMatch(winner){
   let loser=players.find(p=>p!==winner);
-  tournament.table[winner].w++;
-  tournament.table[winner].p+=2;
-  tournament.table[loser].l++;
-  nextMatch();
+  if(phase==="group"){
+    tournament.table[winner].w++;tournament.table[winner].p+=2;tournament.table[loser].l++;
+    nextGroup();return;
+  }
+  if(phase==="semi"){
+    if(!tournament.finals.f1){tournament.finals.f1=winner;tournament.finals.l1=loser;}
+    else{tournament.finals.f2=winner;tournament.finals.l2=loser;}
+    nextSemi();return;
+  }
+  if(phase==="third"){tournament.finals.third=winner;phase="final";startMatch(tournament.finals.f1,tournament.finals.f2,"Finale");return;}
+  if(phase==="final"){alert(`🥇 ${winner}\n🥈 ${loser}\n🥉 ${tournament.finals.third}`);}
 }
-
 function renderTable(){
-  let html=`<h3>Tabelle</h3><table class="table">
-    <tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>`;
-  Object.entries(tournament.table)
-    .sort((a,b)=>b[1].p-a[1].p)
-    .forEach(([n,d])=>{
-      html+=`<tr><td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td></tr>`;
-    });
-  html+="</table>";
-  tournamentPanel.innerHTML=html;
+  let html=`<h3>Gruppentabelle</h3><table class="table"><tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>`;
+  Object.entries(tournament.table).sort((a,b)=>b[1].p-a[1].p).forEach(([n,d])=>html+=`<tr><td>${n}</td><td>${d.p}</td><td>${d.w}</td><td>${d.l}</td></tr>`);
+  html+="</table>";tournamentPanel.innerHTML=html;
 }
 </script>
 
