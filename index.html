@@ -3,427 +3,465 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Dart Turnier – 501 | Version 2</title>
+<title>Dart Tournament Ultimate Stable</title>
 
 <style>
-:root{
-  --green:#1e7f4f;
-  --red:#b8322a;
-  --gold:#d4af37;
-  --text:#f5f5f5;
+body { margin:0; font-family:Arial; background:#111; color:white; }
+.container { max-width:1300px; margin:auto; padding:20px; }
+
+h1 { color:#00f5c4; }
+
+button {
+  background:#00f5c4;
+  border:none;
+  padding:10px 14px;
+  margin:6px 6px 6px 0;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
 }
-*{box-sizing:border-box}
-body{
-  margin:0;
-  background:radial-gradient(circle at top,#1b5e3a 0%,#050806 70%);
-  font-family:system-ui;
-  color:var(--text);
+
+input, select {
+  width:100%;
+  padding:8px;
+  margin:6px 0;
+  border-radius:6px;
+  border:none;
+}
+
+.card { background:#1c1c1c; padding:20px; border-radius:12px; margin-top:20px; }
+
+table { width:100%; margin-top:20px; border-collapse:collapse; }
+th { color:#00f5c4; padding:6px; border-bottom:1px solid #333; }
+td { text-align:center; padding:6px; }
+
+.highlight-row { background:#1f2f2f; }
+
+.overlay {
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.95);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:1000;
+}
+
+.modal {
+  background:#222;
+  padding:30px;
+  border-radius:16px;
+  max-width:700px;
+  max-height:80vh;
+  overflow:auto;
+  text-align:center;
+}
+
+.gold { color:gold; font-size:24px; }
+
+.bracket {
+  display:grid;
+  grid-template-columns:1fr 1fr 1fr;
+  gap:40px;
+  margin-top:40px;
+}
+
+.bracket h3 { color:#00f5c4; }
+
+.match-box {
+  background:#1c1c1c;
+  padding:8px;
+  border-radius:8px;
+  margin-bottom:10px;
+}
+
+.final-box {
+  border:3px solid gold;
+  box-shadow:0 0 15px gold;
+}
+
+.podium {
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  gap:30px;
+  margin-top:40px;
+}
+
+.step {
+  width:150px;
+  text-align:center;
+  border-radius:10px;
   padding:10px;
+  font-weight:bold;
 }
-.panel{background:#111;padding:12px;border-radius:14px;margin-bottom:12px}
-.hidden{display:none!important}
-.header{
-  display:flex;justify-content:space-between;align-items:center;
-  border:2px solid var(--gold);border-radius:14px;
-  padding:10px;background:#000
+
+.gold-step { background:gold; color:black; height:160px; }
+.silver-step { background:silver; color:black; height:130px; }
+.bronze-step { background:#cd7f32; color:black; height:110px; }
+
+.confetti {
+  position:fixed;
+  width:8px;
+  height:8px;
+  top:0;
+  animation:fall 3s linear forwards;
+  z-index:2000;
 }
-.ctrl,.num,input{
-  padding:10px;font-weight:900;border-radius:10px;
-  border:2px solid #0f5d35;background:#000;color:#eee;
-  cursor:pointer
+
+@keyframes fall {
+  to { transform:translateY(100vh) rotate(720deg); opacity:0; }
 }
-.ctrl.active{background:var(--gold);color:#000}
-.ctrl.zero{border-color:#777;color:#aaa}
-.scores{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.player{
-  background:#000;border:2px solid #0f5d35;
-  border-radius:12px;padding:10px;cursor:pointer
-}
-.player.active{border-color:var(--gold)}
-.score{font-size:42px;font-weight:900}
-.avg{font-size:14px;color:#ffd700}
-.log{font-size:12px;opacity:.85;min-height:16px}
-.controls,.numbers{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
-.table{width:100%;border-collapse:collapse}
-.table th,.table td{border-bottom:1px solid #333;padding:6px;text-align:center}
-.table th{color:var(--gold)}
-.modal{
-  position:fixed;inset:0;background:rgba(0,0,0,.85);
-  display:flex;align-items:center;justify-content:center;z-index:1000
-}
-.modalBox{
-  background:#000;border:2px solid var(--gold);
-  border-radius:14px;padding:20px;
-  max-width:650px;width:100%;
-  text-align:center;font-weight:900
-}
-.modalBox h3{margin-top:0;color:var(--gold)}
 </style>
 </head>
-
 <body>
 
-<div class="panel header">
-  <h2 id="status">Startmenü</h2>
-  <div>
-    <button class="ctrl" onclick="openOverallStats()">📊 Statistik</button>
-    <button class="ctrl" onclick="openMatches()">📋 Partien</button>
-  </div>
-</div>
-
-<div id="menu" class="panel">
-  <button class="ctrl" onclick="startTournament()">501 Turnier starten (5 Spieler)</button>
-</div>
-
-<div id="tournamentPanel" class="panel hidden"></div>
-<div id="game" class="panel hidden"></div>
-
-<div id="input" class="panel hidden">
-  <div class="controls">
-    <button id="btnS" class="ctrl active" onclick="setMult(1)">S</button>
-    <button id="btnD" class="ctrl" onclick="setMult(2)">D</button>
-    <button id="btnT" class="ctrl" onclick="setMult(3)">T</button>
-    <button class="ctrl zero" onclick="throwMiss()">0</button>
-    <button class="ctrl" onclick="undo()">Undo</button>
-  </div>
-  <input id="scoreInput" type="number" placeholder="Punkte (0–180)"
-    onkeydown="if(event.key==='Enter')submitScore()">
-  <div class="numbers" id="nums"></div>
-</div>
-
-<!-- BUST -->
-<div id="bustOverlay" class="modal hidden">
-  <div class="modalBox" style="border-color:#b8322a;color:#ff6b6b;font-size:36px">
-    BUST
-  </div>
-</div>
-
-<!-- Sieger -->
-<div id="winnerPopup" class="modal hidden">
-  <div class="modalBox">
-    <h3 id="winnerText"></h3>
-    <div id="nextMatchText"></div><br>
-    <button class="ctrl" onclick="closeWinnerPopup()">Weiter</button>
-  </div>
-</div>
-
-<!-- Spieler-Stats -->
-<div id="statsPopup" class="modal hidden">
-  <div class="modalBox">
-    <h3 id="statsName"></h3>
-    <div id="statsContent"></div><br>
-    <button class="ctrl" onclick="statsPopup.classList.add('hidden')">Schließen</button>
-  </div>
-</div>
-
-<!-- Gesamt-Stats -->
-<div id="overallStatsPopup" class="modal hidden">
-  <div class="modalBox">
-    <h3>📊 Gesamtstatistik</h3>
-    <div id="overallStatsContent"></div><br>
-    <button class="ctrl" onclick="overallStatsPopup.classList.add('hidden')">Schließen</button>
-  </div>
-</div>
-
-<!-- Partien -->
-<div id="matchesPopup" class="modal hidden">
-  <div class="modalBox">
-    <h3>📋 Spielübersicht</h3>
-    <div id="matchesContent"></div><br>
-    <button class="ctrl" onclick="matchesPopup.classList.add('hidden')">Schließen</button>
-  </div>
-</div>
+<div class="container" id="app"></div>
 
 <script>
-/* ================= STATE ================= */
-let players=[],scores=[501,501],legs=[0,0];
-let turn=0,darts=0,mult=1;
-let roundLog=[[],[]],totalPoints=[0,0],totalDarts=[0,0];
-let busts=[0,0],schwarzwald=[0,0];
-let history=[];
-let tournament=null,currentMatch=null;
-let overallStats={};
 
-/* ================= MULTI ================= */
-function resetMult(){
-  mult=1;
-  btnS.classList.add("active");
-  btnD.classList.remove("active");
-  btnT.classList.remove("active");
+let tournament=null
+
+function shuffle(a){ return [...a].sort(()=>Math.random()-0.5) }
+
+function renderSetup(){
+  document.getElementById("app").innerHTML=`
+    <h1>Dart Tournament Ultimate Stable</h1>
+
+    <input id="tournamentName" placeholder="Turniername">
+
+    <select id="groups">
+      <option value="1">1 Gruppe</option>
+      <option value="2">2 Gruppen</option>
+    </select>
+
+    <select id="count">
+      <option value="4">4 Spieler</option>
+      <option value="5">5 Spieler</option>
+      <option value="6">6 Spieler</option>
+      <option value="7">7 Spieler</option>
+      <option value="8">8 Spieler</option>
+    </select>
+
+    <div id="players"></div>
+
+    <button onclick="startTournament()">Turnier starten</button>
+  `
+  renderPlayers()
 }
-function setMult(m){
-  mult=m;
-  btnS.classList.toggle("active", m===1);
-  btnD.classList.toggle("active", m===2);
-  btnT.classList.toggle("active", m===3);
+
+function renderPlayers(){
+  let c=parseInt(document.getElementById("count").value)
+  let div=document.getElementById("players")
+  div.innerHTML=""
+  for(let i=0;i<c;i++)
+    div.innerHTML+=`<input id="p${i}" placeholder="Spieler ${i+1}">`
 }
 
-/* ================= UTILS ================= */
-const next=i=>(i+1)%2;
-function shuffle(a){for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}}
-function getAvg(p,d){return d?((p/d)*3).toFixed(1):"0.0"}
-function showBust(){bustOverlay.classList.remove("hidden");setTimeout(()=>bustOverlay.classList.add("hidden"),700)}
+document.addEventListener("change",e=>{
+  if(e.target.id==="count") renderPlayers()
+})
 
-/* ================= UI ================= */
-function buildNums(){
-  nums.innerHTML="";
-  for(let i=0;i<=20;i++){
-    let b=document.createElement("button");
-    b.className="num";b.textContent=i;
-    b.onclick=()=>throwDart(i*mult);
-    nums.appendChild(b);
+function createMatch(p1,p2,stage){
+  return {id:crypto.randomUUID(),p1,p2,legs1:0,legs2:0,finished:false,stage}
+}
+
+function scheduleMatches(matches){
+  let result=[]
+  let remaining=[...matches]
+  let last=[]
+  while(remaining.length){
+    let idx=remaining.findIndex(m=>!last.includes(m.p1.id)&&!last.includes(m.p2.id))
+    if(idx===-1) idx=0
+    let m=remaining.splice(idx,1)[0]
+    result.push(m)
+    last=[m.p1.id,m.p2.id]
   }
-  [["Bull",25],["DBull",50]].forEach(x=>{
-    let b=document.createElement("button");
-    b.className="num";b.textContent=x[0];
-    b.onclick=()=>throwDart(x[1]);
-    nums.appendChild(b);
-  });
-}
-function updateGame(){
-  game.innerHTML=`
-    <div class="scores">
-      ${players.map((p,i)=>`
-        <div class="player ${i===turn?'active':''}" onclick="openPlayerStats(${i})">
-          <b>${p}</b>
-          <div class="log">${roundLog[i].join(" | ")}</div>
-          <div class="score">${scores[i]}</div>
-          <div class="avg">
-            Avg: ${getAvg(totalPoints[i],totalDarts[i])}
-            | Legs: ${legs[i]}
-          </div>
-        </div>`).join("")}
-    </div>`;
+  return result
 }
 
-/* ================= STATISTIK ================= */
-function openPlayerStats(i){
-  statsName.textContent=players[i];
-  statsContent.innerHTML=`
-    🎯 Average: <b>${getAvg(totalPoints[i],totalDarts[i])}</b><br>
-    🏹 Darts: <b>${totalDarts[i]}</b><br>
-    📊 Punkte: <b>${totalPoints[i]}</b><br>
-    ❌ Busts: <b>${busts[i]}</b><br>
-    🌲 Schwarzwald: <b>${schwarzwald[i]}</b>
-  `;
-  statsPopup.classList.remove("hidden");
-}
-function openOverallStats(){
-  let html=`<table class="table">
-    <tr>
-      <th>Spieler</th><th>Avg</th><th>Darts</th>
-      <th>Punkte</th><th>Busts</th><th>Schwarzwald</th><th>Siege</th>
-    </tr>`;
-  Object.entries(overallStats).forEach(([n,s])=>{
-    html+=`
-      <tr>
-        <td>${n}</td>
-        <td>${getAvg(s.points,s.darts)}</td>
-        <td>${s.darts}</td>
-        <td>${s.points}</td>
-        <td>${s.busts}</td>
-        <td>${s.schwarzwald}</td>
-        <td>${s.wins}</td>
-      </tr>`;
-  });
-  html+="</table>";
-  overallStatsContent.innerHTML=html;
-  overallStatsPopup.classList.remove("hidden");
-}
-
-/* ================= SPIEL ================= */
-function save(){
-  history.push(JSON.stringify({
-    scores:[...scores],legs:[...legs],
-    roundLog:roundLog.map(r=>[...r]),
-    totalPoints:[...totalPoints],totalDarts:[...totalDarts],
-    busts:[...busts],schwarzwald:[...schwarzwald],
-    turn,darts
-  }));
-}
-function undo(){
-  if(!history.length)return;
-  let s=JSON.parse(history.pop());
-  scores=s.scores;legs=s.legs;roundLog=s.roundLog;
-  totalPoints=s.totalPoints;totalDarts=s.totalDarts;
-  busts=s.busts;schwarzwald=s.schwarzwald;
-  turn=s.turn;darts=s.darts;
-  resetMult();
-  updateGame();
-}
-function throwMiss(){
-  save();
-  schwarzwald[turn]++;
-  totalDarts[turn]++;
-  roundLog[turn].push(0);
-  resetMult();
-  if(++darts>=3){darts=0;roundLog[turn]=[];turn=next(turn)}
-  updateGame();
-}
-function submitScore(){
-  let v=+scoreInput.value;
-  if(!isNaN(v))throwDart(v);
-  scoreInput.value="";
-}
-function throwDart(v){
-  save();
-  let ns=scores[turn]-v;
-  resetMult();
-  if(ns<0||ns===1||(ns===0&&v%2!==0)){
-    busts[turn]++;
-    showBust();
-    roundLog[turn]=[];
-    darts=0;turn=next(turn);
-    updateGame();return;
-  }
-  scores[turn]=ns;
-  roundLog[turn].push(v);
-  totalPoints[turn]+=v;
-  totalDarts[turn]++;
-  if(ns===0){
-    legs[turn]++;
-    if(legs[turn]===2){endMatch(players[turn]);return;}
-    scores=[501,501];roundLog=[[],[]];
-    darts=0;turn=next(turn);
-    updateGame();return;
-  }
-  if(++darts>=3){
-    darts=0;roundLog[turn]=[];turn=next(turn)
-  }
-  updateGame();
-}
-
-/* ================= TURNIER ================= */
 function startTournament(){
-  let names=[];
-  for(let i=1;i<=5;i++)names.push(prompt("Name Spieler "+i,"Spieler "+i));
-  tournament={
-    group:[],semi:[],semiWinners:[],semiLosers:[],
-    third:null,final:null,all:[]
-  };
-  overallStats={};
-  names.forEach(n=>{
-    overallStats[n]={points:0,darts:0,busts:0,schwarzwald:0,wins:0};
-  });
-  for(let i=0;i<5;i++)
-    for(let j=i+1;j<5;j++)
-      tournament.group.push({a:names[i],b:names[j],phase:"Gruppe",res:null});
-  shuffle(tournament.group);
-  tournament.all=[...tournament.group];
-  menu.classList.add("hidden");
-  renderGroupTable();
-  nextGroupMatch();
-}
-function nextGroupMatch(){
-  if(!tournament.group.length){
-    renderGroupTable();
-    let played=tournament.all.filter(m=>m.phase==="Gruppe"&&m.res);
-    let stats={};
-    played.forEach(m=>{
-      stats[m.a]=(stats[m.a]||0)+(m.res.startsWith("2")?2:0);
-      stats[m.b]=(stats[m.b]||0)+(m.res.endsWith("2")?2:0);
-    });
-    let ranked=Object.keys(stats).sort((a,b)=>stats[b]-stats[a]);
-    tournament.semi=[
-      {a:ranked[0],b:ranked[3],phase:"Halbfinale",res:null},
-      {a:ranked[1],b:ranked[2],phase:"Halbfinale",res:null}
-    ];
-    tournament.all.push(...tournament.semi);
-    startMatch(tournament.semi.shift());
-    return;
-  }
-  startMatch(tournament.group.shift());
-}
-function startMatch(m){
-  currentMatch=m;
-  players=[m.a,m.b];
-  scores=[501,501];legs=[0,0];
-  roundLog=[[],[]];totalPoints=[0,0];totalDarts=[0,0];
-  busts=[0,0];schwarzwald=[0,0];
-  history=[];turn=0;darts=0;
-  status.textContent=`${m.phase}: ${m.a} vs ${m.b}`;
-  game.classList.remove("hidden");
-  input.classList.remove("hidden");
-  buildNums();updateGame();
-}
-function endMatch(winner){
-  let loser=players.find(p=>p!==winner);
-  currentMatch.res=`${legs[players.indexOf(winner)]}:${legs[players.indexOf(loser)]}`;
-  players.forEach((p,i)=>{
-    overallStats[p].points+=totalPoints[i];
-    overallStats[p].darts+=totalDarts[i];
-    overallStats[p].busts+=busts[i];
-    overallStats[p].schwarzwald+=schwarzwald[i];
-  });
-  overallStats[winner].wins++;
-  if(currentMatch.phase==="Gruppe"){
-    renderGroupTable();
-    winnerText.textContent=`🏆 Sieger: ${winner}`;
-    nextMatchText.innerHTML=tournament.group.length
-      ? `▶️ Nächstes Spiel:<br>${tournament.group[0].a} vs ${tournament.group[0].b}`
-      : `▶️ Halbfinale`;
-    winnerPopup.classList.remove("hidden");return;
-  }
-  if(currentMatch.phase==="Halbfinale"){
-    tournament.semiWinners.push(winner);
-    tournament.semiLosers.push(loser);
-    if(tournament.semiWinners.length===2){
-      tournament.third={a:tournament.semiLosers[0],b:tournament.semiLosers[1],phase:"Spiel um Platz 3",res:null};
-      tournament.final={a:tournament.semiWinners[0],b:tournament.semiWinners[1],phase:"Finale",res:null};
-      tournament.all.push(tournament.third,tournament.final);
-    }
-    winnerText.textContent=`🏆 Sieger: ${winner}`;
-    nextMatchText.innerHTML=`▶️ Nächstes Spiel`;
-    winnerPopup.classList.remove("hidden");return;
-  }
-  if(currentMatch.phase==="Spiel um Platz 3"){
-    winnerText.textContent=`🥉 Platz 3: ${winner}`;
-    nextMatchText.innerHTML=`▶️ Finale`;
-    winnerPopup.classList.remove("hidden");return;
-  }
-  if(currentMatch.phase==="Finale"){
-    alert(`🥇 ${winner}\n🥈 ${loser}`);
-    location.reload();
-  }
-}
-function closeWinnerPopup(){
-  winnerPopup.classList.add("hidden");
-  if(currentMatch.phase==="Gruppe")nextGroupMatch();
-  else if(currentMatch.phase==="Halbfinale")startMatch(tournament.semi.shift()||tournament.third);
-  else if(currentMatch.phase==="Spiel um Platz 3")startMatch(tournament.final);
-}
-function renderGroupTable(){
-  let stats={};
-  tournament.all.filter(m=>m.phase==="Gruppe"&&m.res).forEach(m=>{
-    stats[m.a]??={p:0,w:0,l:0};
-    stats[m.b]??={p:0,w:0,l:0};
-    let [a,b]=m.res.split(":").map(Number);
-    if(a>b){stats[m.a].p+=2;stats[m.a].w++;stats[m.b].l++;}
-    else{stats[m.b].p+=2;stats[m.b].w++;stats[m.a].l++;}
-  });
-  let html=`<h3>📊 Tabelle – Gruppenphase</h3>
-  <table class="table">
-    <tr><th>Spieler</th><th>P</th><th>S</th><th>N</th></tr>`;
-  Object.entries(stats).sort((a,b)=>b[1].p-a[1].p)
-    .forEach(([n,s])=>{
-      html+=`<tr><td>${n}</td><td>${s.p}</td><td>${s.w}</td><td>${s.l}</td></tr>`;
-    });
-  html+="</table>";
-  tournamentPanel.innerHTML=html;
-  tournamentPanel.classList.remove("hidden");
-}
-function openMatches(){
-  if(!tournament){alert("Turnier noch nicht gestartet");return;}
-  let html=`<table class="table">
-    <tr><th>Phase</th><th>Spiel</th><th>Ergebnis</th></tr>`;
-  tournament.all.forEach(m=>{
-    html+=`<tr><td>${m.phase}</td><td>${m.a} vs ${m.b}</td><td>${m.res||"-"}</td></tr>`;
-  });
-  html+="</table>";
-  matchesContent.innerHTML=html;
-  matchesPopup.classList.remove("hidden");
-}
-</script>
+  let name=document.getElementById("tournamentName").value.trim()
+  if(!name) return alert("Turniername fehlt")
 
+  let count=parseInt(document.getElementById("count").value)
+  let groupCount=parseInt(document.getElementById("groups").value)
+
+  let players=[]
+  for(let i=0;i<count;i++){
+    let n=document.getElementById("p"+i).value.trim()
+    if(!n) return alert("Spielernamen fehlen")
+    players.push({id:crypto.randomUUID(),name:n})
+  }
+
+  players=shuffle(players)
+
+  let groups=[]
+  if(groupCount===1){
+    groups=[players]
+  } else {
+    let half=Math.ceil(players.length/2)
+    groups=[players.slice(0,half),players.slice(half)]
+  }
+
+  let groupMatches=[]
+  groups.forEach(g=>{
+    let matches=[]
+    for(let i=0;i<g.length;i++)
+      for(let j=i+1;j<g.length;j++)
+        matches.push(createMatch(g[i],g[j],"group"))
+    groupMatches.push(scheduleMatches(matches))
+  })
+
+  tournament={
+    name,
+    groups,
+    groupMatches,
+    knockout:[],
+    phase:"group"
+  }
+
+  render()
+}
+
+function calculateTable(matches){
+  let stats={}
+  matches.forEach(m=>{
+    [m.p1,m.p2].forEach(p=>{
+      if(!stats[p.id])
+        stats[p.id]={name:p.name,played:0,wins:0,losses:0,diff:0,points:0}
+    })
+    if(m.finished){
+      let s1=stats[m.p1.id]
+      let s2=stats[m.p2.id]
+      s1.played++; s2.played++
+      s1.diff+=m.legs1-m.legs2
+      s2.diff+=m.legs2-m.legs1
+      if(m.legs1>m.legs2){s1.wins++;s1.points++;s2.losses++}
+      else{s2.wins++;s2.points++;s1.losses++}
+    }
+  })
+  return Object.values(stats).sort((a,b)=>b.points-a.points||b.diff-a.diff)
+}
+
+function addLeg(id,player){
+  let matches=tournament.phase==="group"
+    ? tournament.groupMatches.flat()
+    : tournament.knockout
+
+  let m=matches.find(x=>x.id===id)
+  if(m.finished) return
+
+  if(player===1) m.legs1++
+  else m.legs2++
+
+  if(m.legs1===3||m.legs2===3){
+    m.finished=true
+    showOverlay(m)
+    checkPhase()
+  }
+
+  render()
+}
+
+function showOverlay(match){
+  let winner=match.legs1>match.legs2?match.p1.name:match.p2.name
+  const o=document.createElement("div")
+  o.className="overlay"
+  o.innerHTML=`
+    <div class="modal">
+      <div class="gold">Sieger: ${winner}</div>
+      <h3>${match.legs1}:${match.legs2}</h3>
+      <button onclick="this.closest('.overlay').remove()">Weiter</button>
+    </div>
+  `
+  document.body.appendChild(o)
+}
+
+function checkPhase(){
+  if(tournament.phase==="group"){
+    if(tournament.groupMatches.flat().every(m=>m.finished)){
+      startKO()
+    }
+  }
+  else if(tournament.phase==="semi"){
+    if(tournament.knockout.filter(m=>m.stage==="semi").every(m=>m.finished)){
+      createFinals()
+      tournament.phase="finals"
+    }
+  }
+  else if(tournament.phase==="finals"){
+    if(tournament.knockout.filter(m=>m.stage!=="semi").every(m=>m.finished)){
+      tournament.phase="finished"
+    }
+  }
+}
+
+function startKO(){
+  let tables=tournament.groupMatches.map(g=>calculateTable(g))
+
+  if(tournament.groups.length===1){
+    let t=tables[0]
+    tournament.knockout=[
+      createMatch(t[0],t[3],"semi"),
+      createMatch(t[1],t[2],"semi")
+    ]
+  } else {
+    let A=tables[0]
+    let B=tables[1]
+    tournament.knockout=[
+      createMatch(A[0],B[1],"semi"),
+      createMatch(B[0],A[1],"semi")
+    ]
+  }
+
+  tournament.phase="semi"
+}
+
+function createFinals(){
+  let semis=tournament.knockout.filter(m=>m.stage==="semi")
+
+  let w1=semis[0].legs1>semis[0].legs2?semis[0].p1:semis[0].p2
+  let l1=semis[0].legs1>semis[0].legs2?semis[0].p2:semis[0].p1
+  let w2=semis[1].legs1>semis[1].legs2?semis[1].p1:semis[1].p2
+  let l2=semis[1].legs1>semis[1].legs2?semis[1].p2:semis[1].p1
+
+  tournament.knockout.push(createMatch(l1,l2,"third"))
+  tournament.knockout.push(createMatch(w1,w2,"final"))
+}
+
+function render(){
+  const app=document.getElementById("app")
+  app.innerHTML=`<h1>${tournament.name}</h1>
+  <button onclick="showSchedule()">Spielplan</button>`
+
+  if(tournament.phase==="group"){
+    tournament.groupMatches.forEach((g,i)=>{
+      let table=calculateTable(g)
+      app.innerHTML+=`
+        <h2>Gruppe ${i+1}</h2>
+        <table>
+          <tr><th>#</th><th>Spieler</th><th>P</th><th>Diff</th></tr>
+          ${table.map((p,i)=>`
+            <tr class="${i<2?'highlight-row':''}">
+              <td>${i+1}</td>
+              <td>${p.name}</td>
+              <td>${p.points}</td>
+              <td>${p.diff}</td>
+            </tr>
+          `).join("")}
+        </table>
+      `
+    })
+  }
+
+  let matches=tournament.phase==="group"
+    ? tournament.groupMatches.flat()
+    : tournament.knockout
+
+  let next=matches.find(m=>!m.finished)
+
+  if(next){
+    let cls=next.stage==="final"?"card final-box":"card"
+    app.innerHTML+=`
+      <div class="${cls}">
+        <h2>${next.stage==="final"?"GRAND FINAL":""}</h2>
+        <h2>${next.p1.name} vs ${next.p2.name}</h2>
+        <h3>${next.legs1}:${next.legs2}</h3>
+        <button onclick="addLeg('${next.id}',1)">Leg ${next.p1.name}</button>
+        <button onclick="addLeg('${next.id}',2)">Leg ${next.p2.name}</button>
+      </div>
+    `
+  }
+
+  if(tournament.phase!=="group"){
+    renderBracket()
+  }
+
+  if(tournament.phase==="finished"){
+    renderCeremony()
+  }
+}
+
+function renderBracket(){
+  const app=document.getElementById("app")
+  app.innerHTML+=`
+    <div class="bracket">
+      <div>
+        <h3>Halbfinale</h3>
+        ${tournament.knockout.filter(m=>m.stage==="semi")
+          .map(m=>`<div class="match-box">${m.p1.name} vs ${m.p2.name}</div>`).join("")}
+      </div>
+      <div>
+        <h3>Kleines Finale</h3>
+        ${tournament.knockout.filter(m=>m.stage==="third")
+          .map(m=>`<div class="match-box">${m.p1.name} vs ${m.p2.name}</div>`).join("")}
+      </div>
+      <div>
+        <h3>Finale</h3>
+        ${tournament.knockout.filter(m=>m.stage==="final")
+          .map(m=>`<div class="match-box final-box">${m.p1.name} vs ${m.p2.name}</div>`).join("")}
+      </div>
+    </div>
+  `
+}
+
+function showSchedule(){
+  let all=[...tournament.groupMatches.flat(),...tournament.knockout]
+  const o=document.createElement("div")
+  o.className="overlay"
+  o.innerHTML=`
+    <div class="modal">
+      <h2>Spielplan</h2>
+      ${all.map(m=>
+        `${m.p1.name} vs ${m.p2.name}
+        ${m.finished?`→ ${m.legs1}:${m.legs2}`:"(offen)"}`
+      ).join("<br>")}
+      <br><br>
+      <button onclick="this.closest('.overlay').remove()">Schließen</button>
+    </div>
+  `
+  document.body.appendChild(o)
+}
+
+function renderCeremony(){
+  let final=tournament.knockout.find(m=>m.stage==="final")
+  let third=tournament.knockout.find(m=>m.stage==="third")
+
+  let gold=final.legs1>final.legs2?final.p1.name:final.p2.name
+  let silver=final.legs1>final.legs2?final.p2.name:final.p1.name
+  let bronze=third? (third.legs1>third.legs2?third.p1.name:third.p2.name):""
+
+  document.getElementById("app").innerHTML+=`
+    <div class="podium">
+      <div class="step silver-step">🥈 ${silver}</div>
+      <div class="step gold-step">🥇 ${gold}</div>
+      <div class="step bronze-step">🥉 ${bronze}</div>
+    </div>
+    <br>
+    <button onclick="restart()">Neues Turnier starten</button>
+  `
+  launchConfetti()
+}
+
+function launchConfetti(){
+  for(let i=0;i<80;i++){
+    const c=document.createElement("div")
+    c.className="confetti"
+    c.style.left=Math.random()*100+"vw"
+    c.style.background=["gold","#00f5c4","red","blue","lime"][Math.floor(Math.random()*5)]
+    document.body.appendChild(c)
+    setTimeout(()=>c.remove(),4000)
+  }
+}
+
+function restart(){
+  tournament=null
+  renderSetup()
+}
+
+renderSetup()
+
+</script>
 </body>
 </html>
