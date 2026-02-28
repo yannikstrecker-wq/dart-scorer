@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Darts Turnier unter Freunden - V3 PRO</title>
+<title>Darts Turnier unter Freunden</title>
 
 <style>
 body{
@@ -12,29 +12,456 @@ body{
   background:linear-gradient(135deg,#0f2027,#203a43,#2c5364);
   color:white;
 }
-
-.container{max-width:1400px;margin:auto;padding:20px;}
+.container{max-width:1300px;margin:auto;padding:20px;}
 h1{text-align:center;color:#00f5c4;}
 
 input{
   width:100%;
-  padding:20px;
-  margin:12px 0;
-  border-radius:12px;
-  border:none;
-  font-size:20px;
-}
-
-select{
-  width:100%;
-  padding:10px;
-  margin:6px 0;
-  border-radius:8px;
+  padding:12px;
+  margin:8px 0;
+  border-radius:10px;
   border:none;
 }
 
 button{
   background:#00f5c4;
+  border:none;
+  padding:10px 14px;
+  margin:5px;
+  border-radius:8px;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+table{
+  width:100%;
+  margin-top:20px;
+  border-collapse:collapse;
+}
+th{color:#00f5c4;border-bottom:1px solid #333;padding:6px;}
+td{text-align:center;padding:6px;}
+
+.current-game{
+  background:#1c1c1c;
+  padding:30px;
+  border-radius:20px;
+  margin-top:30px;
+  text-align:center;
+  box-shadow:0 0 25px rgba(0,245,196,0.4);
+}
+
+.players{font-size:26px;margin:15px 0;}
+.score{font-size:40px;font-weight:bold;}
+
+.final-card{
+  border:4px solid gold;
+  box-shadow:0 0 35px gold;
+  transform:scale(1.05);
+}
+
+.bracket{
+  display:flex;
+  justify-content:space-between;
+  margin-top:40px;
+}
+.bracket-column{width:32%;}
+.bracket-column h3{text-align:center;color:#00f5c4;}
+
+.match-box{
+  background:#1c1c1c;
+  padding:10px;
+  border-radius:10px;
+  margin-bottom:10px;
+  text-align:center;
+}
+
+.overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,0.92);
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  z-index:5000;
+}
+
+.modal{
+  background:#222;
+  padding:30px;
+  border-radius:16px;
+  text-align:center;
+  max-width:800px;
+  width:95%;
+  max-height:85vh;
+  overflow:auto;
+}
+
+.section-title{
+  margin-top:20px;
+  font-size:18px;
+  color:#00f5c4;
+  border-bottom:1px solid #333;
+  padding-bottom:5px;
+}
+
+.podium{
+  display:flex;
+  justify-content:center;
+  align-items:flex-end;
+  gap:30px;
+  margin-top:20px;
+}
+
+.step{
+  width:150px;
+  text-align:center;
+  border-radius:10px;
+  padding:10px;
+  font-weight:bold;
+}
+
+.gold{background:gold;color:black;height:180px;}
+.silver{background:silver;color:black;height:150px;}
+.bronze{background:#cd7f32;color:black;height:130px;}
+
+.firework{
+  position:fixed;
+  width:8px;
+  height:8px;
+  border-radius:50%;
+  animation:explode 1.5s ease-out forwards;
+}
+
+@keyframes explode{
+  to{
+    transform:translateY(-300px) scale(4);
+    opacity:0;
+  }
+}
+</style>
+</head>
+<body>
+
+<div class="container" id="app"></div>
+
+<script>
+
+let tournament=null
+const app=document.getElementById("app")
+
+function shuffle(a){return[...a].sort(()=>Math.random()-0.5)}
+
+function renderSetup(){
+app.innerHTML=`
+<h1>Darts Turnier unter Freunden</h1>
+<input id="tournamentName" placeholder="Turniername">
+<select id="count">
+<option value="4">4 Spieler</option>
+<option value="5">5 Spieler</option>
+<option value="6">6 Spieler</option>
+<option value="7">7 Spieler</option>
+<option value="8">8 Spieler</option>
+</select>
+<div id="players"></div>
+<button onclick="startTournament()">Turnier starten</button>
+`
+renderPlayers()
+}
+
+function renderPlayers(){
+let c=parseInt(count.value)
+players.innerHTML=""
+for(let i=0;i<c;i++)
+players.innerHTML+=`<input id="p${i}" placeholder="Spieler ${i+1}">`
+}
+
+document.addEventListener("change",e=>{
+if(e.target.id==="count")renderPlayers()
+})
+
+function createMatch(p1,p2,stage){
+return{id:crypto.randomUUID(),p1,p2,legs1:0,legs2:0,finished:false,stage}
+}
+
+function schedule(matches){
+let result=[],remaining=[...matches],last=[]
+while(remaining.length){
+let idx=remaining.findIndex(m=>!last.includes(m.p1.id)&&!last.includes(m.p2.id))
+if(idx===-1)idx=0
+let m=remaining.splice(idx,1)[0]
+result.push(m)
+last=[m.p1.id,m.p2.id]
+}
+return result
+}
+
+function startTournament(){
+let name=tournamentName.value.trim()
+if(!name)return alert("Turniername fehlt")
+
+let playersArr=[]
+for(let i=0;i<count.value;i++){
+let n=document.getElementById("p"+i).value.trim()
+if(!n)return alert("Spielernamen fehlen")
+playersArr.push({id:crypto.randomUUID(),name:n})
+}
+
+playersArr=shuffle(playersArr)
+
+let matches=[]
+for(let i=0;i<playersArr.length;i++)
+for(let j=i+1;j<playersArr.length;j++)
+matches.push(createMatch(playersArr[i],playersArr[j],"group"))
+
+matches=schedule(matches)
+
+tournament={
+name,
+players:playersArr,
+groupMatches:matches,
+knockout:[],
+phase:"group"
+}
+render()
+}
+
+function calculateTable(){
+let stats={}
+tournament.players.forEach(p=>{
+stats[p.id]={id:p.id,name:p.name,points:0,diff:0}
+})
+tournament.groupMatches.forEach(m=>{
+if(m.finished){
+let s1=stats[m.p1.id]
+let s2=stats[m.p2.id]
+s1.diff+=m.legs1-m.legs2
+s2.diff+=m.legs2-m.legs1
+if(m.legs1>m.legs2)s1.points++
+else s2.points++
+}
+})
+return Object.values(stats).sort((a,b)=>b.points-a.points||b.diff-a.diff)
+}
+
+function showOverlay(title,html){
+const o=document.createElement("div")
+o.className="overlay"
+o.innerHTML=`
+<div class="modal">
+<h2>${title}</h2>
+${html}
+<br><br>
+<button onclick="this.closest('.overlay').remove()">Weiter</button>
+</div>`
+document.body.appendChild(o)
+setTimeout(()=>o.remove(),5000)
+}
+
+function addLeg(id,p){
+let list=tournament.phase==="group"?tournament.groupMatches:tournament.knockout
+let m=list.find(x=>x.id===id)
+if(m.finished)return
+
+if(p===1)m.legs1++
+else m.legs2++
+
+if(m.legs1===3||m.legs2===3){
+m.finished=true
+
+let winner=m.legs1>m.legs2?m.p1.name:m.p2.name
+let next=getNextMatch()
+
+showOverlay(
+m.stage.toUpperCase(),
+`<h3>Sieger: ${winner}</h3>
+<p>${m.legs1}:${m.legs2}</p>
+<p>Nächstes Spiel:<br>${next?next.p1.name+" vs "+next.p2.name:"Phase beendet"}</p>`
+)
+
+checkPhase()
+}
+
+render()
+}
+
+function checkPhase(){
+
+if(tournament.phase==="group" &&
+tournament.groupMatches.every(m=>m.finished)){
+
+let table=calculateTable()
+
+showOverlay(
+"Gruppenphase beendet",
+`<p>Top 4 erreichen das Halbfinale</p>
+<p>1. ${table[0].name}</p>
+<p>2. ${table[1].name}</p>
+<p>3. ${table[2].name}</p>
+<p>4. ${table[3].name}</p>`
+)
+
+tournament.knockout=[
+createMatch(table[0],table[3],"semi"),
+createMatch(table[1],table[2],"semi")
+]
+
+tournament.phase="semi"
+}
+
+else if(tournament.phase==="semi" &&
+tournament.knockout.filter(m=>m.stage==="semi").every(m=>m.finished)){
+
+let s=tournament.knockout.filter(m=>m.stage==="semi")
+
+let w1=s[0].legs1>s[0].legs2?s[0].p1:s[0].p2
+let l1=s[0].legs1>s[0].legs2?s[0].p2:s[0].p1
+let w2=s[1].legs1>s[1].legs2?s[1].p1:s[1].p2
+let l2=s[1].legs1>s[1].legs2?s[1].p2:s[1].p1
+
+tournament.knockout.push(createMatch(l1,l2,"third"))
+tournament.knockout.push(createMatch(w1,w2,"final"))
+
+tournament.phase="finals"
+}
+
+else if(tournament.phase==="finals" &&
+tournament.knockout.every(m=>m.finished)){
+tournament.phase="finished"
+showCeremony()
+}
+}
+
+function getNextMatch(){
+let list=tournament.phase==="group"?tournament.groupMatches:tournament.knockout
+return list.find(m=>!m.finished)
+}
+
+function render(){
+app.innerHTML=`<h1>${tournament.name}</h1>
+<button onclick="showSchedule()">Spielplan</button>
+`
+
+let table=calculateTable()
+
+app.innerHTML+=`
+<table>
+<tr><th>#</th><th>Spieler</th><th>P</th><th>Diff</th></tr>
+${table.map((p,i)=>`
+<tr>
+<td>${i+1}</td>
+<td>${p.name}</td>
+<td>${p.points}</td>
+<td>${p.diff}</td>
+</tr>`).join("")}
+</table>
+`
+
+renderBracket()
+
+let next=getNextMatch()
+if(next){
+let cls=next.stage==="final"?"current-game final-card":"current-game"
+app.innerHTML+=`
+<div class="${cls}">
+<h2>${next.stage.toUpperCase()}</h2>
+<div class="players">${next.p1.name} vs ${next.p2.name}</div>
+<div class="score">${next.legs1}:${next.legs2}</div>
+<button onclick="addLeg('${next.id}',1)">${next.p1.name}</button>
+<button onclick="addLeg('${next.id}',2)">${next.p2.name}</button>
+</div>`
+}
+}
+
+function renderBracket(){
+let table=calculateTable()
+let s=tournament.knockout.filter(m=>m.stage==="semi")
+let third=tournament.knockout.find(m=>m.stage==="third")
+let final=tournament.knockout.find(m=>m.stage==="final")
+
+app.innerHTML+=`
+<div class="bracket">
+<div class="bracket-column">
+<h3>Halbfinale</h3>
+<div class="match-box">${s[0]?s[0].p1.name+" vs "+s[0].p2.name:table[0]?.name+" vs "+table[3]?.name}</div>
+<div class="match-box">${s[1]?s[1].p1.name+" vs "+s[1].p2.name:table[1]?.name+" vs "+table[2]?.name}</div>
+</div>
+<div class="bracket-column">
+<h3>Kleines Finale</h3>
+<div class="match-box">${third?third.p1.name+" vs "+third.p2.name:"-"}</div>
+</div>
+<div class="bracket-column">
+<h3>Finale</h3>
+<div class="match-box final-card">${final?final.p1.name+" vs "+final.p2.name:"-"}</div>
+</div>
+</div>`
+}
+
+function showSchedule(){
+let groupSection=tournament.groupMatches.map(m=>
+`${m.p1.name} vs ${m.p2.name} ${m.finished?"→ "+m.legs1+":"+m.legs2:""}`
+).join("<br>")
+
+let koSection=tournament.knockout.length>0
+?tournament.knockout.map(m=>
+`${m.stage.toUpperCase()} - ${m.p1.name} vs ${m.p2.name} ${m.finished?"→ "+m.legs1+":"+m.legs2:""}`
+).join("<br>")
+:"Noch keine KO Phase"
+
+showOverlay(
+"Spielplan",
+`<div class="section-title">Gruppenphase</div>
+${groupSection}
+<div class="section-title">KO Phase</div>
+${koSection}`
+)
+}
+
+function showCeremony(){
+let final=tournament.knockout.find(m=>m.stage==="final")
+let third=tournament.knockout.find(m=>m.stage==="third")
+
+let winner=final.legs1>final.legs2?final.p1.name:final.p2.name
+let second=final.legs1>final.legs2?final.p2.name:final.p1.name
+let thirdPlace=third? (third.legs1>third.legs2?third.p1.name:third.p2.name):""
+
+const o=document.createElement("div")
+o.className="overlay"
+o.innerHTML=`
+<div class="modal">
+<h1>🏆 SIEGEREHRUNG 🏆</h1>
+<h2>Der Pokal geht diesmal von Baumi an</h2>
+<h1>${winner}</h1>
+<div class="podium">
+<div class="step silver">🥈 ${second}</div>
+<div class="step gold">🥇 ${winner}</div>
+<div class="step bronze">🥉 ${thirdPlace}</div>
+</div>
+<button onclick="restart()">Neues Turnier</button>
+</div>`
+document.body.appendChild(o)
+
+for(let i=0;i<80;i++){
+let f=document.createElement("div")
+f.className="firework"
+f.style.left=Math.random()*100+"vw"
+f.style.bottom="0px"
+f.style.background=["gold","red","blue","lime","orange"][Math.floor(Math.random()*5)]
+document.body.appendChild(f)
+setTimeout(()=>f.remove(),1500)
+}
+}
+
+function restart(){
+document.querySelectorAll(".overlay").forEach(o=>o.remove())
+tournament=null
+renderSetup()
+}
+
+renderSetup()
+
+</script>
+</body>
+</html>  background:#00f5c4;
   border:none;
   padding:12px 16px;
   margin:6px 6px 6px 0;
